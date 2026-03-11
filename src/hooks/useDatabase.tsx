@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { getDatabase } from '../db/database';
 import { refreshBillDueDates } from '../db/bills';
 import { processRecurringTransactions } from '../db/recurring';
+import { rescheduleNotificationsIfEnabled } from '../utils/notifications';
 
 interface DatabaseContextType {
   isReady: boolean;
@@ -24,10 +25,16 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
       await getDatabase();
       await refreshBillDueDates();
       await processRecurringTransactions();
+      await rescheduleNotificationsIfEnabled();
       setIsReady(true);
     }
     init();
   }, []);
+
+  useEffect(() => {
+    if (!isReady) return;
+    rescheduleNotificationsIfEnabled().catch(() => {});
+  }, [refreshKey, isReady]);
 
   const triggerRefresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
