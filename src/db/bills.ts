@@ -92,7 +92,7 @@ export async function getMonthlyBillsTotal(): Promise<number> {
   const result = await db.getFirstAsync<{ total: number | null }>(`
     SELECT SUM(
       CASE frequency
-        WHEN 'weekly' THEN amount * 4.33
+        WHEN 'weekly' THEN amount * 365.25 / 7.0 / 12.0
         WHEN 'monthly' THEN amount
         WHEN 'yearly' THEN amount / 12.0
       END

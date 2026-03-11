@@ -12,8 +12,8 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { name: 'Food', icon: 'restaurant-outline', color: '#FF6B6B', type: 'expense' },
   { name: 'Transport', icon: 'car-outline', color: '#00B894', type: 'expense' },
   { name: 'Entertainment', icon: 'game-controller-outline', color: '#E17055', type: 'expense' },
-  { name: 'Shopping', icon: 'bag-outline', color: '#A29BFE', type: 'expense' },
-  { name: 'Health', icon: 'heart-outline', color: '#FF6B6B', type: 'expense' },
+  { name: 'Shopping', icon: 'bag-outline', color: '#FDA7DF', type: 'expense' },
+  { name: 'Health', icon: 'heart-outline', color: '#E84393', type: 'expense' },
   { name: 'Subscriptions', icon: 'refresh-outline', color: '#74B9FF', type: 'expense' },
   { name: 'Other', icon: 'ellipsis-horizontal-outline', color: '#8E8E9A', type: 'expense' },
 

@@ -32,7 +32,7 @@ export async function pickAndParseCSV(): Promise<CSVImportResult | null> {
   return parseCSVContent(content);
 }
 
-export function parseCSVContent(content: string): CSVImportResult {
+export function parseCSVContent(content: string, dateFormat?: 'dmy' | 'mdy'): CSVImportResult {
   const parsed = Papa.parse(content, {
     header: true,
     dynamicTyping: true,
@@ -65,7 +65,7 @@ export function parseCSVContent(content: string): CSVImportResult {
     }
 
     rows.push({
-      date: normalizeDate(String(date)),
+      date: normalizeDate(String(date), dateFormat),
       description: String(description || ''),
       amount: Math.abs(amount),
       type: amount < 0 ? 'expense' : 'income',
@@ -84,22 +84,38 @@ function findField(row: Record<string, any>, possibleKeys: string[]): any {
   return undefined;
 }
 
-function normalizeDate(dateStr: string): string {
+function normalizeDate(dateStr: string, dateFormat?: 'dmy' | 'mdy'): string {
   // Try ISO format first (YYYY-MM-DD)
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
 
-  // Try DD/MM/YYYY or DD.MM.YYYY
+  // Try DD/MM/YYYY or DD.MM.YYYY or MM/DD/YYYY
   const match = dateStr.match(/^(\d{1,2})[/.,-](\d{1,2})[/.,-](\d{4})$/);
   if (match) {
-    const [, day, month, year] = match;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
+    let [, first, second, year] = match;
 
-  // Try MM/DD/YYYY
-  const matchUS = dateStr.match(/^(\d{1,2})[/](\d{1,2})[/](\d{4})$/);
-  if (matchUS) {
-    const [, month, day, year] = matchUS;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    if (dateFormat === 'mdy') {
+      // Explicit MM/DD/YYYY
+      return `${year}-${first.padStart(2, '0')}-${second.padStart(2, '0')}`;
+    }
+
+    // Default to DD/MM/YYYY (European locale, consistent with EUR)
+    let day = parseInt(first, 10);
+    let month = parseInt(second, 10);
+
+    // Smart detection: if "day" > 12, it must be month (swap)
+    if (day > 12 && month <= 12) {
+      // first is actually month, second is day — but we defaulted to DMY
+      // No: if day > 12 in DMY, day is valid (e.g. 25/01/2024)
+      // This is fine, day can be > 12
+    }
+    // If "month" > 12, it must be the day (input was MDY)
+    if (month > 12 && day <= 12) {
+      const tmp = day;
+      day = month;
+      month = tmp;
+    }
+
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
   return dateStr;
