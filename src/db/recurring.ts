@@ -27,11 +27,10 @@ export async function getRecurringById(id: number): Promise<RecurringTransaction
 export async function createRecurring(input: CreateRecurringTransactionInput): Promise<number> {
   const db = await getDatabase();
   const result = await db.runAsync(
-    'INSERT INTO recurring_transactions (amount, type, category_id, account_id, description, frequency, next_occurrence) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO recurring_transactions (amount, type, category_id, description, frequency, next_occurrence) VALUES (?, ?, ?, ?, ?, ?)',
     input.amount,
     input.type,
     input.category_id,
-    input.account_id ?? null,
     input.description ?? null,
     input.frequency,
     input.next_occurrence
@@ -42,11 +41,10 @@ export async function createRecurring(input: CreateRecurringTransactionInput): P
 export async function updateRecurring(id: number, input: CreateRecurringTransactionInput): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE recurring_transactions SET amount = ?, type = ?, category_id = ?, account_id = ?, description = ?, frequency = ?, next_occurrence = ? WHERE id = ?',
+    'UPDATE recurring_transactions SET amount = ?, type = ?, category_id = ?, description = ?, frequency = ?, next_occurrence = ? WHERE id = ?',
     input.amount,
     input.type,
     input.category_id,
-    input.account_id ?? null,
     input.description ?? null,
     input.frequency,
     input.next_occurrence,
@@ -100,7 +98,6 @@ export async function processRecurringTransactions(): Promise<number> {
       category_id: rec.category_id,
       description: rec.description ?? undefined,
       date: rec.next_occurrence,
-      account_id: rec.account_id ?? undefined,
     });
 
     // Advance next_occurrence

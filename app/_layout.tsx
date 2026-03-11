@@ -66,22 +66,6 @@ function RootLayoutContent() {
           options={{ title: 'Edit Recurring' }}
         />
         <Stack.Screen
-          name="transfer/new"
-          options={{ title: 'New Transfer', presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="accounts/index"
-          options={{ title: 'Accounts' }}
-        />
-        <Stack.Screen
-          name="accounts/new"
-          options={{ title: 'New Account', presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="accounts/[id]"
-          options={{ title: 'Edit Account' }}
-        />
-        <Stack.Screen
           name="budgets/index"
           options={{ title: 'Budgets' }}
         />

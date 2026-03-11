@@ -22,19 +22,17 @@ Premium personal finance app. Currently local-only MVP; future: banking API inte
   - `app/transaction/` -- New/Edit transaction screens
   - `app/bill/` -- New/Edit bill screens (with payment history)
   - `app/categories/` -- Category management (list, create, edit)
-  - `app/accounts/` -- Account management (list, create, edit)
   - `app/budgets/` -- Budget management (list, create)
   - `app/recurring/` -- Recurring transaction management
-  - `app/transfer/` -- Transfer between accounts
 - `src/db/` -- Database layer (singleton, CRUD operations, types, migrations)
   - `database.ts` -- DB init, table creation, seed, migration runner
-  - `migrations.ts` -- Version-tracked migrations using PRAGMA user_version (v1-v8)
-  - `transactions.ts`, `bills.ts`, `categories.ts`, `accounts.ts`, `budgets.ts`, `recurring.ts`, `bill-payments.ts`
+  - `migrations.ts` -- Version-tracked migrations using PRAGMA user_version (v1-v6)
+  - `transactions.ts`, `bills.ts`, `categories.ts`, `budgets.ts`, `recurring.ts`, `bill-payments.ts`
   - `types.ts` -- All TypeScript interfaces
 - `src/components/` -- Reusable UI components
 - `src/components/ui/` -- Design system primitives (Card, Button, Input, Badge, DatePickerField)
 - `src/components/dashboard/` -- Dashboard widget cards (Balance, Bills, CashFlow, Spending, BudgetOverview)
-- `src/hooks/` -- React hooks for data access (useDatabase, useTransactions, useBills, useAccounts, useBudgets, useRecurring, useBillPayments, useCategories, useBiometricLock)
+- `src/hooks/` -- React hooks for data access (useDatabase, useTransactions, useBills, useBudgets, useRecurring, useBillPayments, useCategories, useBiometricLock)
 - `src/utils/` -- Utility functions (currency, dates, CSV import/export)
 - `src/constants/` -- Theme tokens, category definitions
 - `metro.config.js` -- Custom resolver: papaparse → non-minified source, stream → shim
@@ -50,12 +48,11 @@ Premium personal finance app. Currently local-only MVP; future: banking API inte
 ## Database
 - Uses expo-sqlite async API: openDatabaseAsync, runAsync, getAllAsync, getFirstAsync, execAsync
 - Migration system: PRAGMA user_version tracks schema version, migrations run sequentially on startup
-- 7 tables: categories, transactions, bills, accounts, budgets, recurring_transactions, bill_payments
+- 6 tables: categories, transactions, bills, budgets, recurring_transactions, bill_payments
 - All amounts stored as positive REAL values; type column distinguishes income vs expense
 - Dates stored as ISO 8601 strings; date range queries use >= and < (not LIKE)
 - Parameterized queries used everywhere (SQL injection safe)
-- Indexes on transactions(date), transactions(type, date), transactions(category_id), transactions(account_id), bills(is_active, next_due_date), categories(type)
-- Transfer transactions: is_transfer=1, linked_transaction_id pairs expense/income; excluded from summaries
+- Indexes on transactions(date), transactions(type, date), transactions(category_id), bills(is_active, next_due_date), categories(type)
 
 ## Commands
 - `npx expo start` -- Start dev server (iOS/Android only; web has expo-sqlite limitations)

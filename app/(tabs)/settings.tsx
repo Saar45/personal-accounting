@@ -111,13 +111,6 @@ export default function SettingsScreen() {
         />
         <View style={styles.separator} />
         <SettingRow
-          icon="wallet-outline"
-          label="Manage Accounts"
-          description="Add, edit, or remove accounts"
-          onPress={() => router.push('/accounts/')}
-        />
-        <View style={styles.separator} />
-        <SettingRow
           icon="pie-chart-outline"
           iconColor={colors.warning}
           label="Budgets"
@@ -131,14 +124,6 @@ export default function SettingsScreen() {
           label="Recurring Transactions"
           description="Auto-create transactions on schedule"
           onPress={() => router.push('/recurring/')}
-        />
-        <View style={styles.separator} />
-        <SettingRow
-          icon="swap-horizontal-outline"
-          iconColor="#74B9FF"
-          label="New Transfer"
-          description="Move money between accounts"
-          onPress={() => router.push('/transfer/new')}
         />
       </Card>
 

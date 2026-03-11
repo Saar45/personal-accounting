@@ -35,47 +35,13 @@ const migrations: Migration[] = [
   },
   {
     version: 3,
-    up: async (db) => {
-      // F3: Allow custom categories (add is_custom column)
+    up: async (_db) => {
+      // F3: Allow custom categories
       // No schema change needed - is_default already distinguishes
     },
   },
   {
     version: 4,
-    up: async (db) => {
-      // F4: Multiple accounts
-      await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS accounts (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          type TEXT NOT NULL CHECK(type IN ('checking', 'savings', 'cash', 'credit', 'investment')),
-          icon TEXT NOT NULL DEFAULT 'wallet-outline',
-          color TEXT NOT NULL DEFAULT '#6C5CE7',
-          initial_balance REAL DEFAULT 0,
-          is_default INTEGER DEFAULT 0,
-          created_at TEXT DEFAULT (datetime('now'))
-        );
-      `);
-      // Add account_id column to transactions
-      await db.execAsync(`
-        ALTER TABLE transactions ADD COLUMN account_id INTEGER REFERENCES accounts(id);
-      `);
-      // Insert default account
-      await db.runAsync(
-        "INSERT INTO accounts (name, type, icon, color, is_default) VALUES (?, ?, ?, ?, 1)",
-        'Main Account', 'checking', 'wallet-outline', '#6C5CE7'
-      );
-      // Link existing transactions to default account
-      await db.execAsync(`
-        UPDATE transactions SET account_id = (SELECT id FROM accounts WHERE is_default = 1);
-      `);
-      await db.execAsync(`
-        CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
-      `);
-    },
-  },
-  {
-    version: 5,
     up: async (db) => {
       // F5: Budgets per category
       await db.execAsync(`
@@ -91,7 +57,7 @@ const migrations: Migration[] = [
     },
   },
   {
-    version: 6,
+    version: 5,
     up: async (db) => {
       // F7: Recurring transactions
       await db.execAsync(`
@@ -100,32 +66,18 @@ const migrations: Migration[] = [
           amount REAL NOT NULL,
           type TEXT NOT NULL CHECK(type IN ('expense', 'income')),
           category_id INTEGER NOT NULL,
-          account_id INTEGER,
           description TEXT,
           frequency TEXT NOT NULL CHECK(frequency IN ('daily', 'weekly', 'monthly', 'yearly')),
           next_occurrence TEXT NOT NULL,
           is_active INTEGER DEFAULT 1,
           created_at TEXT DEFAULT (datetime('now')),
-          FOREIGN KEY (category_id) REFERENCES categories(id),
-          FOREIGN KEY (account_id) REFERENCES accounts(id)
+          FOREIGN KEY (category_id) REFERENCES categories(id)
         );
       `);
     },
   },
   {
-    version: 7,
-    up: async (db) => {
-      // F8: Transfer transactions
-      await db.execAsync(`
-        ALTER TABLE transactions ADD COLUMN is_transfer INTEGER DEFAULT 0;
-      `);
-      await db.execAsync(`
-        ALTER TABLE transactions ADD COLUMN linked_transaction_id INTEGER;
-      `);
-    },
-  },
-  {
-    version: 8,
+    version: 6,
     up: async (db) => {
       // F10: Bill payment tracking
       await db.execAsync(`

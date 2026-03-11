@@ -44,13 +44,12 @@ export async function getTransactionById(id: number): Promise<TransactionWithCat
 export async function createTransaction(input: CreateTransactionInput): Promise<number> {
   const db = await getDatabase();
   const result = await db.runAsync(
-    'INSERT INTO transactions (amount, type, category_id, description, date, account_id) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO transactions (amount, type, category_id, description, date) VALUES (?, ?, ?, ?, ?)',
     input.amount,
     input.type,
     input.category_id,
     input.description ?? null,
-    input.date,
-    input.account_id ?? null
+    input.date
   );
   return result.lastInsertRowId;
 }
@@ -58,13 +57,12 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
 export async function updateTransaction(id: number, input: CreateTransactionInput): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE transactions SET amount = ?, type = ?, category_id = ?, description = ?, date = ?, account_id = ? WHERE id = ?',
+    'UPDATE transactions SET amount = ?, type = ?, category_id = ?, description = ?, date = ? WHERE id = ?',
     input.amount,
     input.type,
     input.category_id,
     input.description ?? null,
     input.date,
-    input.account_id ?? null,
     id
   );
 }
@@ -84,7 +82,7 @@ export async function getMonthlyTotals(year: number, month: number): Promise<{ i
       COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) as income,
       COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) as expenses
     FROM transactions
-    WHERE date >= ? AND date < ? AND COALESCE(is_transfer, 0) = 0
+    WHERE date >= ? AND date < ?
   `, start, end);
 
   return { income: result?.income ?? 0, expenses: result?.expenses ?? 0 };
@@ -104,7 +102,7 @@ export async function getSpendingByCategory(year: number, month: number): Promis
     SELECT t.category_id, c.name as category_name, c.icon as category_icon, c.color as category_color, SUM(t.amount) as total
     FROM transactions t
     JOIN categories c ON t.category_id = c.id
-    WHERE t.type = 'expense' AND t.date >= ? AND t.date < ? AND COALESCE(t.is_transfer, 0) = 0
+    WHERE t.type = 'expense' AND t.date >= ? AND t.date < ?
     GROUP BY t.category_id
     ORDER BY total DESC
   `, start, end);
@@ -119,7 +117,6 @@ export async function getTotalBalance(): Promise<{ income: number; expenses: num
       COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) as income,
       COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) as expenses
     FROM transactions
-    WHERE COALESCE(is_transfer, 0) = 0
   `);
 
   return { income: result?.income ?? 0, expenses: result?.expenses ?? 0 };
@@ -130,13 +127,12 @@ export async function bulkCreateTransactions(inputs: CreateTransactionInput[]): 
   await db.withExclusiveTransactionAsync(async (txn) => {
     for (const input of inputs) {
       await txn.runAsync(
-        'INSERT INTO transactions (amount, type, category_id, description, date, account_id) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO transactions (amount, type, category_id, description, date) VALUES (?, ?, ?, ?, ?)',
         input.amount,
         input.type,
         input.category_id,
         input.description ?? null,
-        input.date,
-        input.account_id ?? null
+        input.date
       );
     }
   });
@@ -147,7 +143,6 @@ export interface SearchTransactionsParams {
   query?: string;
   type?: 'expense' | 'income';
   categoryId?: number;
-  accountId?: number;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -168,10 +163,6 @@ export async function searchTransactions(params: SearchTransactionsParams): Prom
   if (params.categoryId) {
     conditions.push('t.category_id = ?');
     args.push(params.categoryId);
-  }
-  if (params.accountId) {
-    conditions.push('t.account_id = ?');
-    args.push(params.accountId);
   }
   if (params.dateFrom) {
     conditions.push('t.date >= ?');

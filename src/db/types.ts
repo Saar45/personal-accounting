@@ -21,9 +21,6 @@ export interface Transaction {
   category_id: number;
   description: string | null;
   date: string;
-  account_id: number | null;
-  is_transfer: number;
-  linked_transaction_id: number | null;
   created_at: string;
 }
 
@@ -57,7 +54,6 @@ export interface CreateTransactionInput {
   category_id: number;
   description?: string;
   date: string;
-  account_id?: number;
 }
 
 export interface CreateBillInput {
@@ -67,25 +63,6 @@ export interface CreateBillInput {
   frequency: 'weekly' | 'monthly' | 'yearly';
   due_day: number;
   next_due_date: string;
-}
-
-export interface Account {
-  id: number;
-  name: string;
-  type: 'checking' | 'savings' | 'cash' | 'credit' | 'investment';
-  icon: string;
-  color: string;
-  initial_balance: number;
-  is_default: number;
-  created_at: string;
-}
-
-export interface CreateAccountInput {
-  name: string;
-  type: 'checking' | 'savings' | 'cash' | 'credit' | 'investment';
-  icon: string;
-  color: string;
-  initial_balance: number;
 }
 
 export interface Budget {
@@ -114,7 +91,6 @@ export interface RecurringTransaction {
   amount: number;
   type: 'expense' | 'income';
   category_id: number;
-  account_id: number | null;
   description: string | null;
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   next_occurrence: string;
@@ -132,7 +108,6 @@ export interface CreateRecurringTransactionInput {
   amount: number;
   type: 'expense' | 'income';
   category_id: number;
-  account_id?: number;
   description?: string;
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   next_occurrence: string;
