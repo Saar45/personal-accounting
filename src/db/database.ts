@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
+import { runMigrations } from './migrations';
 
 let db: SQLite.SQLiteDatabase | null = null;
 
@@ -47,6 +48,7 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   `);
 
   await seedDefaultCategories(db);
+  await runMigrations(db);
 
   return db;
 }
