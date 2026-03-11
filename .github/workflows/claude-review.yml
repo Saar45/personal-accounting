@@ -16,6 +16,7 @@ jobs:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
         with:
+          model_provider: github
           prompt: |
             Review this PR for bugs, security issues, and consistency problems.
             Focus on: SQL injection, unhandled errors, missing edge cases, type mismatches, and unhandled promise rejections.
