@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Text, ScrollView, Alert } from 'react-native';
 import { CreateCategoryInput } from '../db/types';
-import Input from './ui/Input';
-import Button from './ui/Button';
+import { Input } from './ui/Input';
+import { Button } from './ui/Button';
 import IconPicker from './IconPicker';
 import ColorPicker from './ColorPicker';
 
