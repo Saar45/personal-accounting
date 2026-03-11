@@ -5,6 +5,7 @@ import { BalanceCard } from '../../src/components/dashboard/BalanceCard';
 import { UpcomingBills } from '../../src/components/dashboard/UpcomingBills';
 import { CashFlowCard } from '../../src/components/dashboard/CashFlowCard';
 import { SpendingBreakdown } from '../../src/components/dashboard/SpendingBreakdown';
+import { BudgetOverview } from '../../src/components/dashboard/BudgetOverview';
 import { getCurrentMonthYear, getMonthName } from '../../src/utils/dates';
 
 export default function DashboardScreen() {
@@ -22,6 +23,7 @@ export default function DashboardScreen() {
       </View>
 
       <BalanceCard />
+      <BudgetOverview />
       <UpcomingBills />
       <CashFlowCard />
       <SpendingBreakdown />
