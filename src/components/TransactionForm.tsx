@@ -4,8 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
+import { DatePickerField } from './ui/DatePickerField';
 import { CategoryPicker } from './CategoryPicker';
+import { AccountPicker } from './AccountPicker';
 import { Category, CreateTransactionInput } from '../db/types';
+import { useAccounts } from '../hooks/useAccounts';
 import { getTodayISO } from '../utils/dates';
 
 interface TransactionFormProps {
@@ -13,6 +16,7 @@ interface TransactionFormProps {
     amount: string;
     type: 'expense' | 'income';
     category_id: number | null;
+    account_id?: number | null;
     description: string;
     date: string;
   };
@@ -22,11 +26,13 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel }: TransactionFormProps) {
+  const { accounts } = useAccounts();
   const [type, setType] = useState<'expense' | 'income'>(initialValues?.type ?? 'expense');
   const [amount, setAmount] = useState(initialValues?.amount ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [date, setDate] = useState(initialValues?.date ?? getTodayISO());
   const [categoryId, setCategoryId] = useState<number | null>(initialValues?.category_id ?? null);
+  const [accountId, setAccountId] = useState<number | null>(initialValues?.account_id ?? null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -54,6 +60,7 @@ export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel
       category_id: categoryId!,
       description: description || undefined,
       date,
+      account_id: accountId ?? undefined,
     });
     setLoading(false);
   };
@@ -107,13 +114,20 @@ export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel
         placeholder="What was this for?"
       />
 
-      <Input
+      <DatePickerField
         label="Date"
         value={date}
-        onChangeText={setDate}
-        placeholder="YYYY-MM-DD"
+        onChange={setDate}
         error={errors.date}
       />
+
+      {accounts.length > 1 && (
+        <AccountPicker
+          accounts={accounts}
+          selectedId={accountId}
+          onSelect={(id: number) => setAccountId(id)}
+        />
+      )}
 
       <CategoryPicker
         type={type}
