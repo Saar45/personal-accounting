@@ -3,13 +3,43 @@ import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../src/constants/theme';
-import { useTransactions } from '../../src/hooks/useTransactions';
+import { useFilteredTransactions } from '../../src/hooks/useTransactions';
+import { useCategories } from '../../src/hooks/useCategories';
 import { TransactionItem } from '../../src/components/TransactionItem';
 import { EmptyState } from '../../src/components/EmptyState';
+import { SearchBar } from '../../src/components/SearchBar';
+import { TransactionFilters } from '../../src/components/TransactionFilters';
 
 export default function TransactionsScreen() {
   const router = useRouter();
-  const { transactions, loading } = useTransactions();
+  const {
+    transactions,
+    loading,
+    query,
+    setQuery,
+    typeFilter,
+    setTypeFilter,
+    categoryFilter,
+    setCategoryFilter,
+  } = useFilteredTransactions();
+  const { categories } = useCategories();
+
+  const ListHeader = (
+    <View style={styles.header}>
+      <SearchBar
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search transactions..."
+      />
+      <TransactionFilters
+        selectedType={typeFilter}
+        onTypeChange={setTypeFilter}
+        categories={categories}
+        selectedCategoryId={categoryFilter}
+        onCategoryChange={setCategoryFilter}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -22,6 +52,7 @@ export default function TransactionsScreen() {
             onPress={() => router.push(`/transaction/${item.id}`)}
           />
         )}
+        ListHeaderComponent={ListHeader}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           !loading ? (
@@ -51,6 +82,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xs,
+    gap: spacing.sm,
   },
   list: {
     paddingBottom: 100,
