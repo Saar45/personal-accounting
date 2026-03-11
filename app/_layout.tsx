@@ -3,10 +3,13 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { DatabaseProvider, useDatabase } from '../src/hooks/useDatabase';
+import { useBiometricLock } from '../src/hooks/useBiometricLock';
+import { BiometricLock } from '../src/components/BiometricLock';
 import { colors } from '../src/constants/theme';
 
 function RootLayoutContent() {
   const { isReady } = useDatabase();
+  const { isLocked, unlock } = useBiometricLock();
 
   if (!isReady) {
     return (
@@ -14,6 +17,10 @@ function RootLayoutContent() {
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
+  }
+
+  if (isLocked) {
+    return <BiometricLock onUnlock={unlock} />;
   }
 
   return (
@@ -45,6 +52,54 @@ function RootLayoutContent() {
         <Stack.Screen
           name="bill/[id]"
           options={{ title: 'Edit Bill' }}
+        />
+        <Stack.Screen
+          name="recurring/index"
+          options={{ title: 'Recurring Transactions' }}
+        />
+        <Stack.Screen
+          name="recurring/new"
+          options={{ title: 'New Recurring', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="recurring/[id]"
+          options={{ title: 'Edit Recurring' }}
+        />
+        <Stack.Screen
+          name="transfer/new"
+          options={{ title: 'New Transfer', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="accounts/index"
+          options={{ title: 'Accounts' }}
+        />
+        <Stack.Screen
+          name="accounts/new"
+          options={{ title: 'New Account', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="accounts/[id]"
+          options={{ title: 'Edit Account' }}
+        />
+        <Stack.Screen
+          name="budgets/index"
+          options={{ title: 'Budgets' }}
+        />
+        <Stack.Screen
+          name="budgets/new"
+          options={{ title: 'New Budget', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="categories/index"
+          options={{ title: 'Categories' }}
+        />
+        <Stack.Screen
+          name="categories/new"
+          options={{ title: 'New Category', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="categories/[id]"
+          options={{ title: 'Edit Category' }}
         />
       </Stack>
     </>

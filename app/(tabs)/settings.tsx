@@ -1,18 +1,45 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../../src/constants/theme';
 import { Card } from '../../src/components/ui/Card';
 import { Button } from '../../src/components/ui/Button';
 import { useDatabase } from '../../src/hooks/useDatabase';
+import { useBiometricLock } from '../../src/hooks/useBiometricLock';
 import { pickAndParseCSV, mapRowsToTransactions, ParsedCSVRow } from '../../src/utils/csv-import';
+import { exportTransactionsCSV } from '../../src/utils/csv-export';
 import { bulkCreateTransactions } from '../../src/db/transactions';
 import { getAllCategories } from '../../src/db/categories';
 import { formatEUR } from '../../src/utils/currency';
 
+function SettingRow({ icon, iconColor, label, description, onPress }: {
+  icon: string;
+  iconColor?: string;
+  label: string;
+  description?: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.settingRow} onPress={onPress} activeOpacity={0.6}>
+      <View style={[styles.settingIcon, { backgroundColor: (iconColor || colors.primary) + '20' }]}>
+        <Ionicons name={icon as any} size={20} color={iconColor || colors.primary} />
+      </View>
+      <View style={styles.settingContent}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        {description && <Text style={styles.settingDescription}>{description}</Text>}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
 export default function SettingsScreen() {
+  const router = useRouter();
   const { triggerRefresh } = useDatabase();
+  const { isEnabled, isSupported, enable, disable } = useBiometricLock();
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [preview, setPreview] = useState<ParsedCSVRow[] | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
 
@@ -24,7 +51,6 @@ export default function SettingsScreen() {
         setImporting(false);
         return;
       }
-
       setPreview(result.rows);
       setImportErrors(result.errors);
       setImporting(false);
@@ -43,7 +69,6 @@ export default function SettingsScreen() {
       for (const cat of categories) {
         categoryMap[cat.name] = cat.id;
       }
-
       const transactions = mapRowsToTransactions(preview, categoryMap);
       await bulkCreateTransactions(transactions);
       triggerRefresh();
@@ -56,10 +81,68 @@ export default function SettingsScreen() {
     setImporting(false);
   };
 
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      await exportTransactionsCSV();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to export transactions');
+    }
+    setExporting(false);
+  };
+
+  const handleToggleBiometric = async () => {
+    if (isEnabled) {
+      disable();
+    } else {
+      await enable();
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionTitle}>Data</Text>
+      <Text style={styles.sectionTitle}>Manage</Text>
+      <Card>
+        <SettingRow
+          icon="grid-outline"
+          label="Manage Categories"
+          description="Add, edit, or remove categories"
+          onPress={() => router.push('/categories/')}
+        />
+        <View style={styles.separator} />
+        <SettingRow
+          icon="wallet-outline"
+          label="Manage Accounts"
+          description="Add, edit, or remove accounts"
+          onPress={() => router.push('/accounts/')}
+        />
+        <View style={styles.separator} />
+        <SettingRow
+          icon="pie-chart-outline"
+          iconColor={colors.warning}
+          label="Budgets"
+          description="Set spending limits per category"
+          onPress={() => router.push('/budgets/')}
+        />
+        <View style={styles.separator} />
+        <SettingRow
+          icon="repeat-outline"
+          iconColor={colors.success}
+          label="Recurring Transactions"
+          description="Auto-create transactions on schedule"
+          onPress={() => router.push('/recurring/')}
+        />
+        <View style={styles.separator} />
+        <SettingRow
+          icon="swap-horizontal-outline"
+          iconColor="#74B9FF"
+          label="New Transfer"
+          description="Move money between accounts"
+          onPress={() => router.push('/transfer/new')}
+        />
+      </Card>
 
+      <Text style={styles.sectionTitle}>Data</Text>
       <Card>
         <TouchableOpacity style={styles.settingRow} onPress={handlePickCSV} disabled={importing}>
           <View style={styles.settingIcon}>
@@ -73,6 +156,19 @@ export default function SettingsScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
+        <View style={styles.separator} />
+        <TouchableOpacity style={styles.settingRow} onPress={handleExportCSV} disabled={exporting}>
+          <View style={[styles.settingIcon, { backgroundColor: colors.success + '20' }]}>
+            <Ionicons name="download-outline" size={20} color={colors.success} />
+          </View>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>Export CSV</Text>
+            <Text style={styles.settingDescription}>
+              Export all transactions as a CSV file
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
       </Card>
 
       {preview && (
@@ -80,12 +176,9 @@ export default function SettingsScreen() {
           <Text style={styles.sectionTitle}>
             Preview ({preview.length} transactions)
           </Text>
-
           {importErrors.length > 0 && (
             <Card style={styles.errorCard}>
-              <Text style={styles.errorTitle}>
-                {importErrors.length} rows skipped
-              </Text>
+              <Text style={styles.errorTitle}>{importErrors.length} rows skipped</Text>
               {importErrors.slice(0, 3).map((err, i) => (
                 <Text key={i} style={styles.errorText}>{err}</Text>
               ))}
@@ -94,7 +187,6 @@ export default function SettingsScreen() {
               )}
             </Card>
           )}
-
           <Card>
             {preview.slice(0, 10).map((row, index) => (
               <View key={index}>
@@ -121,7 +213,6 @@ export default function SettingsScreen() {
               </Text>
             )}
           </Card>
-
           <View style={styles.previewActions}>
             <Button
               title="Cancel"
@@ -138,6 +229,28 @@ export default function SettingsScreen() {
           </View>
         </View>
       )}
+
+      <Text style={styles.sectionTitle}>Security</Text>
+      <Card>
+        <View style={styles.settingRow}>
+          <View style={[styles.settingIcon, { backgroundColor: colors.warning + '20' }]}>
+            <Ionicons name="lock-closed-outline" size={20} color={colors.warning} />
+          </View>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>Biometric Lock</Text>
+            <Text style={styles.settingDescription}>
+              {isSupported ? 'Require Face ID / fingerprint to open' : 'Not available on this device'}
+            </Text>
+          </View>
+          <Switch
+            value={isEnabled}
+            onValueChange={handleToggleBiometric}
+            disabled={!isSupported}
+            trackColor={{ false: colors.surfaceLight, true: colors.primary }}
+            thumbColor={colors.textPrimary}
+          />
+        </View>
+      </Card>
 
       <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>About</Text>
       <Card>
@@ -253,6 +366,7 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: colors.border,
+    marginVertical: spacing.xs,
   },
   previewActions: {
     flexDirection: 'row',
