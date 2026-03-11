@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getDatabase } from '../db/database';
 import { refreshBillDueDates } from '../db/bills';
+import { processRecurringTransactions } from '../db/recurring';
 
 interface DatabaseContextType {
   isReady: boolean;
@@ -22,6 +23,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     async function init() {
       await getDatabase();
       await refreshBillDueDates();
+      await processRecurringTransactions();
       setIsReady(true);
     }
     init();
