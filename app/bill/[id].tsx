@@ -1,28 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, FlatList, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../../src/constants/theme';
+import { colors, spacing, borderRadius } from '../../src/constants/theme';
 import { BillForm } from '../../src/components/BillForm';
+import { Card } from '../../src/components/ui/Card';
+import { Button } from '../../src/components/ui/Button';
 import { getBillById, updateBill, deleteBill } from '../../src/db/bills';
+import { createBillPayment, getPaymentsForBill, deleteBillPayment } from '../../src/db/bill-payments';
 import { useDatabase } from '../../src/hooks/useDatabase';
-import { BillWithCategory, CreateBillInput } from '../../src/db/types';
+import { BillWithCategory, BillPayment, CreateBillInput } from '../../src/db/types';
+import { formatEUR } from '../../src/utils/currency';
+import { formatDate, getTodayISO } from '../../src/utils/dates';
 
 export default function EditBillScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { triggerRefresh } = useDatabase();
+  const { triggerRefresh, refreshKey } = useDatabase();
   const [bill, setBill] = useState<BillWithCategory | null>(null);
+  const [payments, setPayments] = useState<BillPayment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (id) {
-      getBillById(Number(id)).then((b) => {
+      Promise.all([
+        getBillById(Number(id)),
+        getPaymentsForBill(Number(id)),
+      ]).then(([b, p]) => {
         setBill(b);
+        setPayments(p);
         setLoading(false);
       });
     }
-  }, [id]);
+  }, [id, refreshKey]);
 
   if (loading || !bill) {
     return (
@@ -44,6 +54,25 @@ export default function EditBillScreen() {
     router.back();
   };
 
+  const handleMarkPaid = async () => {
+    await createBillPayment({ bill_id: Number(id), amount: bill.amount, paid_date: getTodayISO() });
+    triggerRefresh();
+  };
+
+  const handleDeletePayment = (paymentId: number) => {
+    Alert.alert('Delete Payment', 'Remove this payment record?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteBillPayment(paymentId);
+          triggerRefresh();
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <BillForm
@@ -58,6 +87,29 @@ export default function EditBillScreen() {
         onDelete={handleDelete}
         submitLabel="Update Bill"
       />
+
+      {payments.length > 0 && (
+        <View style={styles.paymentsSection}>
+          <Text style={styles.sectionTitle}>Payment History</Text>
+          <Card>
+            {payments.map((payment, index) => (
+              <View key={payment.id}>
+                {index > 0 && <View style={styles.separator} />}
+                <View style={styles.paymentRow}>
+                  <View>
+                    <Text style={styles.paymentDate}>{formatDate(payment.paid_date)}</Text>
+                  </View>
+                  <Text style={styles.paymentAmount}>{formatEUR(payment.amount)}</Text>
+                </View>
+              </View>
+            ))}
+          </Card>
+        </View>
+      )}
+
+      <View style={styles.markPaidSection}>
+        <Button title="Mark as Paid Today" onPress={handleMarkPaid} variant="secondary" />
+      </View>
     </SafeAreaView>
   );
 }
@@ -72,5 +124,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+  },
+  paymentsSection: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  paymentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  paymentDate: {
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  paymentAmount: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.success,
+  },
+  markPaidSection: {
+    padding: spacing.md,
   },
 });

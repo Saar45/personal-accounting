@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing } from '../constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, borderRadius } from '../constants/theme';
 import { BillWithCategory } from '../db/types';
 import { formatEUR } from '../utils/currency';
 import { getRelativeDueDate, getDueDateColor } from '../utils/dates';
@@ -9,9 +10,10 @@ import { Badge, StatusBadge } from './ui/Badge';
 interface BillItemProps {
   bill: BillWithCategory;
   onPress: () => void;
+  onMarkPaid?: () => void;
 }
 
-export function BillItem({ bill, onPress }: BillItemProps) {
+export function BillItem({ bill, onPress, onMarkPaid }: BillItemProps) {
   const dueDateText = getRelativeDueDate(bill.next_due_date);
   const dueDateColor = getDueDateColor(bill.next_due_date);
 
@@ -35,7 +37,15 @@ export function BillItem({ bill, onPress }: BillItemProps) {
           )}
         </View>
       </View>
-      <Text style={styles.amount}>{formatEUR(bill.amount)}</Text>
+      <View style={styles.rightSection}>
+        <Text style={styles.amount}>{formatEUR(bill.amount)}</Text>
+        {onMarkPaid && bill.is_active ? (
+          <TouchableOpacity style={styles.markPaidButton} onPress={onMarkPaid} activeOpacity={0.7}>
+            <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
+            <Text style={styles.markPaidText}>Paid</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -77,9 +87,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+  rightSection: {
+    alignItems: 'flex-end',
+    gap: spacing.xs,
+  },
   amount: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.danger,
+  },
+  markPaidButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.success + '15',
+  },
+  markPaidText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.success,
   },
 });

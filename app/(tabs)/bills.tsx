@@ -1,15 +1,32 @@
 import React from 'react';
-import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../src/constants/theme';
 import { useBills } from '../../src/hooks/useBills';
+import { useDatabase } from '../../src/hooks/useDatabase';
 import { BillItem } from '../../src/components/BillItem';
 import { EmptyState } from '../../src/components/EmptyState';
+import { createBillPayment } from '../../src/db/bill-payments';
+import { getTodayISO } from '../../src/utils/dates';
 
 export default function BillsScreen() {
   const router = useRouter();
   const { bills, loading } = useBills();
+  const { triggerRefresh } = useDatabase();
+
+  const handleMarkPaid = async (billId: number, amount: number) => {
+    Alert.alert('Mark as Paid', 'Record this bill as paid today?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Mark Paid',
+        onPress: async () => {
+          await createBillPayment({ bill_id: billId, amount, paid_date: getTodayISO() });
+          triggerRefresh();
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -20,6 +37,7 @@ export default function BillsScreen() {
           <BillItem
             bill={item}
             onPress={() => router.push(`/bill/${item.id}`)}
+            onMarkPaid={() => handleMarkPaid(item.id, item.amount)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
