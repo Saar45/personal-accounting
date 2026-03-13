@@ -19,9 +19,9 @@ export async function saveRates(
   rates: Record<string, number>
 ): Promise<void> {
   const db = await getDatabase();
-  await db.withExclusiveTransactionAsync(async (txn) => {
+  await db.withTransactionAsync(async () => {
     for (const [target, rate] of Object.entries(rates)) {
-      await txn.runAsync(
+      await db.runAsync(
         `INSERT OR REPLACE INTO exchange_rates (base_currency, target_currency, rate, date)
          VALUES (?, ?, ?, ?)`,
         baseCurrency,
@@ -33,10 +33,11 @@ export async function saveRates(
   });
 }
 
-export async function getRateAge(): Promise<number | null> {
+export async function getRateAge(baseCurrency: string): Promise<number | null> {
   const db = await getDatabase();
   const result = await db.getFirstAsync<{ fetched_at: string }>(
-    'SELECT fetched_at FROM exchange_rates ORDER BY fetched_at DESC LIMIT 1'
+    'SELECT fetched_at FROM exchange_rates WHERE base_currency = ? ORDER BY fetched_at DESC LIMIT 1',
+    baseCurrency
   );
   if (!result) return null;
   const raw = result.fetched_at;

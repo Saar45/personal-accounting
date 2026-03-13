@@ -28,26 +28,51 @@ const FALLBACK_EUR_RATES: Record<string, number> = {
 
 export type RateMap = Map<string, number>;
 
+// Currencies not supported by frankfurter.app — use EUR as proxy base
+const NON_FRANKFURTER_CURRENCIES = new Set(['XOF']);
+
 export async function fetchRatesFromAPI(baseCurrency: string): Promise<{ date: string; rates: Record<string, number> } | null> {
-  const targets = SUPPORTED_CURRENCIES
+  const frankfurterCurrencies = SUPPORTED_CURRENCIES
     .map((c) => c.code)
-    .filter((c) => c !== baseCurrency)
+    .filter((c) => !NON_FRANKFURTER_CURRENCIES.has(c));
+
+  // If base currency isn't supported by frankfurter, fetch EUR-based rates and derive
+  const effectiveBase = NON_FRANKFURTER_CURRENCIES.has(baseCurrency) ? 'EUR' : baseCurrency;
+  const targets = frankfurterCurrencies
+    .filter((c) => c !== effectiveBase)
     .join(',');
 
   try {
     const response = await fetch(
-      `${FRANKFURTER_BASE}/latest?from=${baseCurrency}&to=${targets}`
+      `${FRANKFURTER_BASE}/latest?from=${effectiveBase}&to=${targets}`
     );
     if (!response.ok) return null;
     const data = await response.json();
-    return { date: data.date, rates: data.rates };
+    let rates: Record<string, number> = data.rates;
+
+    // If we fetched EUR-based rates but need a different base, convert
+    if (effectiveBase !== baseCurrency) {
+      const pegRate = FALLBACK_EUR_RATES[baseCurrency];
+      if (pegRate === undefined) return null;
+      // EUR-based rates → baseCurrency-based rates
+      // 1 EUR = rates[X] X, 1 EUR = pegRate base → 1 base = rates[X] / pegRate X
+      const converted: Record<string, number> = {};
+      for (const [code, eurRate] of Object.entries(rates)) {
+        converted[code] = eurRate / pegRate;
+      }
+      // Also include EUR itself
+      converted['EUR'] = 1 / pegRate;
+      rates = converted;
+    }
+
+    return { date: data.date, rates };
   } catch {
     return null;
   }
 }
 
 export async function refreshRatesIfNeeded(baseCurrency: string): Promise<RateMap> {
-  const age = await getRateAge();
+  const age = await getRateAge(baseCurrency);
   const needsRefresh = age === null || age > REFRESH_INTERVAL_HOURS;
 
   if (needsRefresh) {
@@ -79,6 +104,7 @@ export function buildRateMap(baseCurrency: string, rates: Record<string, number>
   for (const [currency, rate] of Object.entries(rates)) {
     map.set(currency, rate);
   }
+  fillMissingWithFallback(map, baseCurrency);
   return map;
 }
 
@@ -88,7 +114,32 @@ function buildRateMapFromRows(baseCurrency: string, rows: ExchangeRate[]): RateM
   for (const row of rows) {
     map.set(row.target_currency, row.rate);
   }
+  fillMissingWithFallback(map, baseCurrency);
   return map;
+}
+
+/**
+ * Fill in currencies missing from the rate map (e.g. XOF not supported by frankfurter.app).
+ * Cross-rates via EUR: 1 base = eurRate EUR = eurRate * eurToTarget target.
+ */
+function fillMissingWithFallback(map: RateMap, baseCurrency: string): void {
+  const allCodes = SUPPORTED_CURRENCIES.map((c) => c.code);
+  const missing = allCodes.filter((code) => !map.has(code));
+  if (missing.length === 0) return;
+
+  const baseToEurFallback = FALLBACK_EUR_RATES[baseCurrency];
+  const eurRate = map.get('EUR');
+
+  for (const code of missing) {
+    const eurToTarget = FALLBACK_EUR_RATES[code];
+    if (eurToTarget === undefined) continue;
+
+    if (eurRate !== undefined) {
+      map.set(code, eurRate * eurToTarget);
+    } else if (baseToEurFallback !== undefined) {
+      map.set(code, eurToTarget / baseToEurFallback);
+    }
+  }
 }
 
 function buildFallbackRateMap(baseCurrency: string): RateMap {

@@ -47,7 +47,7 @@ export function ExchangeRatesProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        const age = await getRateAge();
+        const age = await getRateAge(currency);
         if (age === null || age > 12) {
           loadRates();
         }
