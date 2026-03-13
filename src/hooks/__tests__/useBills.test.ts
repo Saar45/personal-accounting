@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 jest.mock('../../db/bills', () => ({
   getAllBills: jest.fn().mockResolvedValue([]),
   getUpcomingBills: jest.fn().mockResolvedValue([]),
-  getMonthlyBillsTotal: jest.fn().mockResolvedValue(0),
+  getMonthlyBillsTotal: jest.fn().mockResolvedValue([]),
 }));
 
 import { useBills, useUpcomingBills, useMonthlyBillsTotal } from '../useBills';
@@ -51,7 +51,7 @@ describe('useUpcomingBills', () => {
 
 describe('useMonthlyBillsTotal', () => {
   it('returns total', async () => {
-    mockGetTotal.mockResolvedValue(350);
+    mockGetTotal.mockResolvedValue([{ currency: 'EUR', total: 350 }]);
 
     const { result } = renderHook(() => useMonthlyBillsTotal());
 
