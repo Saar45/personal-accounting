@@ -7,6 +7,7 @@ import { Card } from '../../src/components/ui/Card';
 import { Button } from '../../src/components/ui/Button';
 import { useDatabase } from '../../src/hooks/useDatabase';
 import { useBiometricLock } from '../../src/hooks/useBiometricLock';
+import { useNotifications } from '../../src/hooks/useNotifications';
 import { pickAndParseCSV, mapRowsToTransactions, ParsedCSVRow } from '../../src/utils/csv-import';
 import { exportTransactionsCSV } from '../../src/utils/csv-export';
 import { bulkCreateTransactions } from '../../src/db/transactions';
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { triggerRefresh } = useDatabase();
   const { isEnabled, isSupported, enable, disable } = useBiometricLock();
+  const { isEnabled: notificationsEnabled, isSupported: notificationsSupported, enable: enableNotifications, disable: disableNotifications } = useNotifications();
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [preview, setPreview] = useState<ParsedCSVRow[] | null>(null);
@@ -96,6 +98,14 @@ export default function SettingsScreen() {
       disable();
     } else {
       await enable();
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    if (notificationsEnabled) {
+      await disableNotifications();
+    } else {
+      await enableNotifications();
     }
   };
 
@@ -231,6 +241,28 @@ export default function SettingsScreen() {
             value={isEnabled}
             onValueChange={handleToggleBiometric}
             disabled={!isSupported}
+            trackColor={{ false: colors.surfaceLight, true: colors.primary }}
+            thumbColor={colors.textPrimary}
+          />
+        </View>
+      </Card>
+
+      <Text style={styles.sectionTitle}>Notifications</Text>
+      <Card>
+        <View style={styles.settingRow}>
+          <View style={[styles.settingIcon, { backgroundColor: '#74B9FF' + '20' }]}>
+            <Ionicons name="notifications-outline" size={20} color="#74B9FF" />
+          </View>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>Notifications</Text>
+            <Text style={styles.settingDescription}>
+              {notificationsSupported ? 'Bill reminders & monthly salary reminder' : 'Not available on this device'}
+            </Text>
+          </View>
+          <Switch
+            value={notificationsEnabled}
+            onValueChange={handleToggleNotifications}
+            disabled={!notificationsSupported}
             trackColor={{ false: colors.surfaceLight, true: colors.primary }}
             thumbColor={colors.textPrimary}
           />
