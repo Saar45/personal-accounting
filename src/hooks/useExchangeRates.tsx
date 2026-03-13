@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { useCurrency } from './useCurrency';
 import { useDatabase } from './useDatabase';
 import { RateMap, refreshRatesIfNeeded, loadCachedRates, convert, fetchRatesFromAPI, buildRateMap } from '../utils/exchangeRates';
-import { saveRates, getRateAge, getLastFetchedAt } from '../db/exchange-rates';
+import { saveRates, getRateAge, getLastFetchedAt, getLatestRateDate } from '../db/exchange-rates';
 
 interface ExchangeRatesContextType {
   convertAmount: (amount: number, fromCurrency: string) => number;
@@ -35,8 +35,8 @@ export function ExchangeRatesProvider({ children }: { children: React.ReactNode 
     const map = await refreshRatesIfNeeded(currency);
     setRateMap(map);
     setRatesLoaded(true);
-    const fetchedAt = await getLastFetchedAt(currency);
-    setLastRefresh(fetchedAt);
+    setRateDate(await getLatestRateDate(currency));
+    setLastRefresh(await getLastFetchedAt(currency));
   }, [currency, isReady]);
 
   // Initial load + reload when currency changes

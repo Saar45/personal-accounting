@@ -39,6 +39,15 @@ export async function getRateAge(baseCurrency: string): Promise<number | null> {
   return (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60); // hours
 }
 
+export async function getLatestRateDate(baseCurrency: string): Promise<string | null> {
+  const db = await getDatabase();
+  const result = await db.getFirstAsync<{ date: string }>(
+    'SELECT MAX(date) as date FROM exchange_rates WHERE base_currency = ?',
+    baseCurrency
+  );
+  return result?.date ?? null;
+}
+
 export async function getLastFetchedAt(baseCurrency: string): Promise<Date | null> {
   const db = await getDatabase();
   const result = await db.getFirstAsync<{ fetched_at: string }>(
