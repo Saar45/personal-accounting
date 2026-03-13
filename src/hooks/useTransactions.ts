@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { TransactionWithCategory } from '../db/types';
 import * as transactionsDb from '../db/transactions';
 import { useDatabase } from './useDatabase';
+import { useExchangeRates } from './useExchangeRates';
 import { getCurrentMonthYear } from '../utils/dates';
 
 export function useTransactions() {
@@ -26,39 +27,54 @@ export function useTransactions() {
 
 export function useMonthlyTotals() {
   const { isReady, refreshKey } = useDatabase();
+  const { convertAmount } = useExchangeRates();
   const [totals, setTotals] = useState({ income: 0, expenses: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isReady) return;
     const { year, month } = getCurrentMonthYear();
-    transactionsDb.getMonthlyTotals(year, month).then((data) => {
-      setTotals(data);
+    transactionsDb.getMonthlyTotals(year, month).then((rows) => {
+      const income = rows
+        .filter((r) => r.type === 'income')
+        .reduce((sum, r) => sum + convertAmount(r.total, r.currency), 0);
+      const expenses = rows
+        .filter((r) => r.type === 'expense')
+        .reduce((sum, r) => sum + convertAmount(r.total, r.currency), 0);
+      setTotals({ income, expenses });
       setLoading(false);
     });
-  }, [isReady, refreshKey]);
+  }, [isReady, refreshKey, convertAmount]);
 
   return { ...totals, loading };
 }
 
 export function useTotalBalance() {
   const { isReady, refreshKey } = useDatabase();
+  const { convertAmount } = useExchangeRates();
   const [balance, setBalance] = useState({ income: 0, expenses: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isReady) return;
-    transactionsDb.getTotalBalance().then((data) => {
-      setBalance(data);
+    transactionsDb.getTotalBalance().then((rows) => {
+      const income = rows
+        .filter((r) => r.type === 'income')
+        .reduce((sum, r) => sum + convertAmount(r.total, r.currency), 0);
+      const expenses = rows
+        .filter((r) => r.type === 'expense')
+        .reduce((sum, r) => sum + convertAmount(r.total, r.currency), 0);
+      setBalance({ income, expenses });
       setLoading(false);
     });
-  }, [isReady, refreshKey]);
+  }, [isReady, refreshKey, convertAmount]);
 
   return { ...balance, balance: balance.income - balance.expenses, loading };
 }
 
 export function useSpendingByCategory() {
   const { isReady, refreshKey } = useDatabase();
+  const { convertAmount } = useExchangeRates();
   const [spending, setSpending] = useState<Array<{
     category_id: number;
     category_name: string;
@@ -71,11 +87,34 @@ export function useSpendingByCategory() {
   useEffect(() => {
     if (!isReady) return;
     const { year, month } = getCurrentMonthYear();
-    transactionsDb.getSpendingByCategory(year, month).then((data) => {
-      setSpending(data);
+    transactionsDb.getSpendingByCategory(year, month).then((rows) => {
+      // Merge rows with same category_id (different currencies)
+      const merged = new Map<number, {
+        category_id: number;
+        category_name: string;
+        category_icon: string;
+        category_color: string;
+        total: number;
+      }>();
+      for (const row of rows) {
+        const existing = merged.get(row.category_id);
+        const converted = convertAmount(row.total, row.currency);
+        if (existing) {
+          existing.total += converted;
+        } else {
+          merged.set(row.category_id, {
+            category_id: row.category_id,
+            category_name: row.category_name,
+            category_icon: row.category_icon,
+            category_color: row.category_color,
+            total: converted,
+          });
+        }
+      }
+      setSpending(Array.from(merged.values()).sort((a, b) => b.total - a.total));
       setLoading(false);
     });
-  }, [isReady, refreshKey]);
+  }, [isReady, refreshKey, convertAmount]);
 
   return { spending, loading };
 }

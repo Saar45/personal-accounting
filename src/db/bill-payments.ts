@@ -12,10 +12,11 @@ export async function getPaymentsForBill(billId: number): Promise<BillPayment[]>
 export async function createBillPayment(input: CreateBillPaymentInput): Promise<number> {
   const db = await getDatabase();
   const result = await db.runAsync(
-    'INSERT INTO bill_payments (bill_id, amount, paid_date) VALUES (?, ?, ?)',
+    'INSERT INTO bill_payments (bill_id, amount, paid_date, currency) VALUES (?, ?, ?, ?)',
     input.bill_id,
     input.amount,
-    input.paid_date
+    input.paid_date,
+    input.currency ?? 'EUR'
   );
   return result.lastInsertRowId;
 }
