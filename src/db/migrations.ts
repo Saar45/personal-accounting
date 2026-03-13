@@ -92,6 +92,33 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 7,
+    up: async (db) => {
+      // Multi-currency: add currency column to all entity tables
+      await db.execAsync(`
+        ALTER TABLE transactions ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR';
+        ALTER TABLE bills ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR';
+        ALTER TABLE recurring_transactions ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR';
+        ALTER TABLE budgets ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR';
+        ALTER TABLE bill_payments ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR';
+      `);
+
+      // Exchange rate cache table
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS exchange_rates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          base_currency TEXT NOT NULL,
+          target_currency TEXT NOT NULL,
+          rate REAL NOT NULL,
+          date TEXT NOT NULL,
+          fetched_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(base_currency, target_currency, date)
+        );
+        CREATE INDEX IF NOT EXISTS idx_exchange_rates_base_date ON exchange_rates(base_currency, date);
+      `);
+    },
+  },
 ];
 
 export async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
