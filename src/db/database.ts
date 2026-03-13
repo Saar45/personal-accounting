@@ -11,8 +11,13 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (dbInitPromise) return dbInitPromise;
 
   dbInitPromise = initDatabase();
-  db = await dbInitPromise;
-  return db;
+  try {
+    db = await dbInitPromise;
+    return db;
+  } catch (e) {
+    dbInitPromise = null;
+    throw e;
+  }
 }
 
 async function initDatabase(): Promise<SQLite.SQLiteDatabase> {

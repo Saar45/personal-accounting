@@ -34,6 +34,12 @@ export async function saveRates(
 }
 
 export async function getRateAge(baseCurrency: string): Promise<number | null> {
+  const fetchedAt = await getLastFetchedAt(baseCurrency);
+  if (!fetchedAt) return null;
+  return (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60); // hours
+}
+
+export async function getLastFetchedAt(baseCurrency: string): Promise<Date | null> {
   const db = await getDatabase();
   const result = await db.getFirstAsync<{ fetched_at: string }>(
     'SELECT fetched_at FROM exchange_rates WHERE base_currency = ? ORDER BY fetched_at DESC LIMIT 1',
@@ -41,7 +47,5 @@ export async function getRateAge(baseCurrency: string): Promise<number | null> {
   );
   if (!result) return null;
   const raw = result.fetched_at;
-  const fetchedAt = new Date(raw.endsWith('Z') ? raw : raw + 'Z').getTime();
-  const now = Date.now();
-  return (now - fetchedAt) / (1000 * 60 * 60); // hours
+  return new Date(raw.endsWith('Z') ? raw : raw + 'Z');
 }

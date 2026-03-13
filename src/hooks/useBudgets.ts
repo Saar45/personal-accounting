@@ -27,6 +27,7 @@ export function useBudgetProgress() {
           spent,
         };
       });
+      converted.sort((a, b) => b.spent - a.spent);
       setBudgets(converted);
       setLoading(false);
     });

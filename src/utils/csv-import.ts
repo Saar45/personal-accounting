@@ -3,6 +3,9 @@ import * as FileSystem from 'expo-file-system';
 import Papa from 'papaparse';
 import { CreateTransactionInput } from '../db/types';
 import { DEFAULT_CATEGORIES } from '../constants/categories';
+import { SUPPORTED_CURRENCIES } from './currency';
+
+const VALID_CURRENCY_CODES = new Set(SUPPORTED_CURRENCIES.map((c) => c.code));
 
 export interface ParsedCSVRow {
   date: string;
@@ -71,7 +74,9 @@ export function parseCSVContent(content: string, dateFormat?: 'dmy' | 'mdy'): CS
       description: String(description || ''),
       amount: Math.abs(amount),
       type: amount < 0 ? 'expense' : 'income',
-      currency: currencyRaw ? String(currencyRaw).trim().toUpperCase() : undefined,
+      currency: currencyRaw && VALID_CURRENCY_CODES.has(String(currencyRaw).trim().toUpperCase())
+        ? String(currencyRaw).trim().toUpperCase()
+        : undefined,
     });
   }
 
