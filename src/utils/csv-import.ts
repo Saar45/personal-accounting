@@ -9,6 +9,7 @@ export interface ParsedCSVRow {
   description: string;
   amount: number;
   type: 'expense' | 'income';
+  currency?: string;
 }
 
 export interface CSVImportResult {
@@ -49,6 +50,7 @@ export function parseCSVContent(content: string, dateFormat?: 'dmy' | 'mdy'): CS
     const date = findField(row, ['date', 'datum', 'booking date', 'transaction date']);
     const description = findField(row, ['description', 'memo', 'reference', 'details', 'text', 'purpose']);
     const amountRaw = findField(row, ['amount', 'betrag', 'value', 'sum']);
+    const currencyRaw = findField(row, ['currency', 'währung', 'devise']);
 
     if (!date || amountRaw === undefined) {
       errors.push(`Row ${i + 1}: Missing date or amount`);
@@ -69,6 +71,7 @@ export function parseCSVContent(content: string, dateFormat?: 'dmy' | 'mdy'): CS
       description: String(description || ''),
       amount: Math.abs(amount),
       type: amount < 0 ? 'expense' : 'income',
+      currency: currencyRaw ? String(currencyRaw).trim().toUpperCase() : undefined,
     });
   }
 
@@ -156,6 +159,7 @@ export function mapRowsToTransactions(
       category_id: categoryId,
       description: row.description,
       date: row.date,
+      currency: row.currency,
     };
   });
 }

@@ -9,6 +9,7 @@ import { useDatabase } from '../../src/hooks/useDatabase';
 import { useBiometricLock } from '../../src/hooks/useBiometricLock';
 import { useNotifications } from '../../src/hooks/useNotifications';
 import { useCurrency } from '../../src/hooks/useCurrency';
+import { useExchangeRates } from '../../src/hooks/useExchangeRates';
 import { pickAndParseCSV, mapRowsToTransactions, ParsedCSVRow } from '../../src/utils/csv-import';
 import { exportTransactionsCSV } from '../../src/utils/csv-export';
 import { bulkCreateTransactions } from '../../src/db/transactions';
@@ -42,7 +43,9 @@ export default function SettingsScreen() {
   const { isEnabled, isSupported, enable, disable } = useBiometricLock();
   const { isEnabled: notificationsEnabled, isSupported: notificationsSupported, enable: enableNotifications, disable: disableNotifications } = useNotifications();
   const { currency, setCurrency, formatAmount, currencies } = useCurrency();
+  const { lastRefresh, refreshRates } = useExchangeRates();
   const [importing, setImporting] = useState(false);
+  const [refreshingRates, setRefreshingRates] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [preview, setPreview] = useState<ParsedCSVRow[] | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
@@ -291,6 +294,47 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </Card>
 
+      <Text style={styles.sectionTitle}>Exchange Rates</Text>
+      <Card>
+        <View style={styles.settingRow}>
+          <View style={[styles.settingIcon, { backgroundColor: '#00CEC9' + '20' }]}>
+            <Ionicons name="swap-horizontal-outline" size={20} color="#00CEC9" />
+          </View>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>Last Updated</Text>
+            <Text style={styles.settingDescription}>
+              {lastRefresh
+                ? lastRefresh.toLocaleString()
+                : 'Not yet fetched'}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.separator} />
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={async () => {
+            setRefreshingRates(true);
+            await refreshRates().catch(() => {});
+            setRefreshingRates(false);
+          }}
+          disabled={refreshingRates}
+          activeOpacity={0.6}
+        >
+          <View style={[styles.settingIcon, { backgroundColor: '#00CEC9' + '20' }]}>
+            <Ionicons name="refresh-outline" size={20} color="#00CEC9" />
+          </View>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>
+              {refreshingRates ? 'Refreshing...' : 'Refresh Rates'}
+            </Text>
+            <Text style={styles.settingDescription}>
+              Fetch latest exchange rates from ECB
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+      </Card>
+
       <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>About</Text>
       <Card>
         <View style={styles.aboutRow}>
@@ -335,6 +379,7 @@ export default function SettingsScreen() {
                 onPress={async () => {
                   await setCurrency(item.code);
                   setCurrencyPickerVisible(false);
+                  refreshRates().catch(() => {});
                   rescheduleNotificationsIfEnabled().catch(() => {});
                 }}
                 activeOpacity={0.6}
