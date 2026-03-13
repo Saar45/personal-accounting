@@ -8,6 +8,7 @@ import { DatePickerField } from './ui/DatePickerField';
 import { CategoryPicker } from './CategoryPicker';
 import { Category, CreateTransactionInput } from '../db/types';
 import { getTodayISO } from '../utils/dates';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface TransactionFormProps {
   initialValues?: {
@@ -23,6 +24,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel }: TransactionFormProps) {
+  const { currency } = useCurrency();
   const [type, setType] = useState<'expense' | 'income'>(initialValues?.type ?? 'expense');
   const [amount, setAmount] = useState(initialValues?.amount ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
@@ -93,7 +95,7 @@ export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel
       </View>
 
       <Input
-        label="Amount (EUR)"
+        label={`Amount (${currency})`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"

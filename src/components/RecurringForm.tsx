@@ -8,6 +8,7 @@ import { CategoryPicker } from './CategoryPicker';
 import { DatePickerField } from './ui/DatePickerField';
 import { Category, CreateRecurringTransactionInput } from '../db/types';
 import { getTodayISO } from '../utils/dates';
+import { useCurrency } from '../hooks/useCurrency';
 
 const FREQUENCIES = [
   { key: 'daily' as const, label: 'Daily' },
@@ -31,6 +32,7 @@ interface RecurringFormProps {
 }
 
 export function RecurringForm({ initialValues, onSubmit, onDelete, submitLabel }: RecurringFormProps) {
+  const { currency } = useCurrency();
   const [type, setType] = useState<'expense' | 'income'>(initialValues?.type ?? 'expense');
   const [amount, setAmount] = useState(initialValues?.amount ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
@@ -105,7 +107,7 @@ export function RecurringForm({ initialValues, onSubmit, onDelete, submitLabel }
       </View>
 
       <Input
-        label="Amount (EUR)"
+        label={`Amount (${currency})`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"

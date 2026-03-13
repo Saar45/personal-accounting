@@ -43,7 +43,7 @@ Premium personal finance app. Currently local-only MVP; future: banking API inte
 - All icons use Ionicons from @expo/vector-icons. Never use emojis.
 - Cards: borderRadius 16, subtle shadows, surface background
 - Typography: system font (San Francisco / Roboto), tabular-nums for amounts
-- Currency: EUR formatted via Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' })
+- Currency: configurable base currency (default EUR) via useCurrency hook; 16 supported currencies formatted via Intl.NumberFormat with locale-appropriate formatting
 
 ## Database
 - Uses expo-sqlite async API: openDatabaseAsync, runAsync, getAllAsync, getFirstAsync, execAsync
@@ -64,6 +64,14 @@ Premium personal finance app. Currently local-only MVP; future: banking API inte
 - TypeScript strict mode
 - StyleSheet.create for all styles (no inline style objects)
 - Keep screen files thin -- delegate logic to hooks and components
+
+## Workflow
+Always follow this structured workflow for any feature or fix:
+1. **Code** -- implement the changes
+2. **Review** -- run the `reviewer` agent to check quality, security, consistency, and bugs
+3. **Test** -- run the `tester` agent to validate build and verify correctness
+4. **Fix** -- address any issues found by reviewer/tester, re-run tests
+5. **Commit** -- only after review and tests pass
 
 ## Known Issues
 - papaparse.min.js causes Babel stack overflow; metro.config.js resolves to papaparse.js + stream-shim.js

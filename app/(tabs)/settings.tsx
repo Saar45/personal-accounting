@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../../src/constants/theme';
@@ -8,11 +8,12 @@ import { Button } from '../../src/components/ui/Button';
 import { useDatabase } from '../../src/hooks/useDatabase';
 import { useBiometricLock } from '../../src/hooks/useBiometricLock';
 import { useNotifications } from '../../src/hooks/useNotifications';
+import { useCurrency } from '../../src/hooks/useCurrency';
 import { pickAndParseCSV, mapRowsToTransactions, ParsedCSVRow } from '../../src/utils/csv-import';
 import { exportTransactionsCSV } from '../../src/utils/csv-export';
 import { bulkCreateTransactions } from '../../src/db/transactions';
 import { getAllCategories } from '../../src/db/categories';
-import { formatEUR } from '../../src/utils/currency';
+import { rescheduleNotificationsIfEnabled } from '../../src/utils/notifications';
 
 function SettingRow({ icon, iconColor, label, description, onPress }: {
   icon: string;
@@ -40,10 +41,14 @@ export default function SettingsScreen() {
   const { triggerRefresh } = useDatabase();
   const { isEnabled, isSupported, enable, disable } = useBiometricLock();
   const { isEnabled: notificationsEnabled, isSupported: notificationsSupported, enable: enableNotifications, disable: disableNotifications } = useNotifications();
+  const { currency, setCurrency, formatAmount, currencies } = useCurrency();
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [preview, setPreview] = useState<ParsedCSVRow[] | null>(null);
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [currencyPickerVisible, setCurrencyPickerVisible] = useState(false);
+
+  const currentCurrencyInfo = currencies.find((c) => c.code === currency);
 
   const handlePickCSV = async () => {
     setImporting(true);
@@ -197,7 +202,7 @@ export default function SettingsScreen() {
                     styles.previewAmount,
                     { color: row.type === 'income' ? colors.success : colors.danger }
                   ]}>
-                    {row.type === 'income' ? '+' : '-'}{formatEUR(row.amount)}
+                    {row.type === 'income' ? '+' : '-'}{formatAmount(row.amount)}
                   </Text>
                 </View>
               </View>
@@ -269,6 +274,23 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
+      <Text style={styles.sectionTitle}>Preferences</Text>
+      <Card>
+        <TouchableOpacity style={styles.settingRow} onPress={() => setCurrencyPickerVisible(true)} activeOpacity={0.6}>
+          <View style={[styles.settingIcon, { backgroundColor: '#FDCB6E' + '20' }]}>
+            <Ionicons name="cash-outline" size={20} color="#FDCB6E" />
+          </View>
+          <View style={styles.settingContent}>
+            <Text style={styles.settingLabel}>Currency</Text>
+            <Text style={styles.settingDescription}>
+              {currentCurrencyInfo ? `${currentCurrencyInfo.name} (${currentCurrencyInfo.symbol})` : currency}
+            </Text>
+          </View>
+          <Text style={styles.currencyCode}>{currency}</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+      </Card>
+
       <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>About</Text>
       <Card>
         <View style={styles.aboutRow}>
@@ -278,7 +300,7 @@ export default function SettingsScreen() {
         <View style={styles.separator} />
         <View style={styles.aboutRow}>
           <Text style={styles.aboutLabel}>Currency</Text>
-          <Text style={styles.aboutValue}>EUR</Text>
+          <Text style={styles.aboutValue}>{currency}</Text>
         </View>
         <View style={styles.separator} />
         <View style={styles.aboutRow}>
@@ -286,6 +308,52 @@ export default function SettingsScreen() {
           <Text style={styles.aboutValue}>Local (SQLite)</Text>
         </View>
       </Card>
+
+      <Modal
+        visible={currencyPickerVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setCurrencyPickerVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Currency</Text>
+            <TouchableOpacity onPress={() => setCurrencyPickerVisible(false)}>
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={currencies}
+            keyExtractor={(item) => item.code}
+            contentContainerStyle={styles.currencyList}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.currencyRow,
+                  item.code === currency && styles.currencyRowSelected,
+                ]}
+                onPress={async () => {
+                  await setCurrency(item.code);
+                  setCurrencyPickerVisible(false);
+                  rescheduleNotificationsIfEnabled().catch(() => {});
+                }}
+                activeOpacity={0.6}
+              >
+                <View style={styles.currencyInfo}>
+                  <Text style={styles.currencySymbol}>{item.symbol}</Text>
+                  <View>
+                    <Text style={styles.currencyName}>{item.name}</Text>
+                    <Text style={styles.currencyCodeLabel}>{item.code}</Text>
+                  </View>
+                </View>
+                {item.code === currency && (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -406,5 +474,64 @@ const styles = StyleSheet.create({
   aboutValue: {
     fontSize: 15,
     color: colors.textSecondary,
+  },
+  currencyCode: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary,
+    marginRight: spacing.xs,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  currencyList: {
+    padding: spacing.md,
+  },
+  currencyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xs,
+  },
+  currencyRowSelected: {
+    backgroundColor: colors.primary + '15',
+  },
+  currencyInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  currencySymbol: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    width: 40,
+    textAlign: 'center',
+  },
+  currencyName: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+  currencyCodeLabel: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
 });

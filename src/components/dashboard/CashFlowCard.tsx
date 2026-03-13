@@ -3,11 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../constants/theme';
 import { Card } from '../ui/Card';
-import { formatEUR } from '../../utils/currency';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useMonthlyTotals } from '../../hooks/useTransactions';
 import { getCurrentMonthYear, getMonthName } from '../../utils/dates';
 
 export function CashFlowCard() {
+  const { formatAmount } = useCurrency();
   const { income, expenses, loading } = useMonthlyTotals();
   const { month } = getCurrentMonthYear();
   const net = income - expenses;
@@ -29,7 +30,7 @@ export function CashFlowCard() {
           />
         </View>
         <Text style={[styles.barValue, { color: colors.success }]}>
-          {loading ? '---' : formatEUR(income)}
+          {loading ? '---' : formatAmount(income)}
         </Text>
       </View>
 
@@ -41,14 +42,14 @@ export function CashFlowCard() {
           />
         </View>
         <Text style={[styles.barValue, { color: colors.danger }]}>
-          {loading ? '---' : formatEUR(expenses)}
+          {loading ? '---' : formatAmount(expenses)}
         </Text>
       </View>
 
       <View style={styles.netRow}>
         <Text style={styles.netLabel}>Net</Text>
         <Text style={[styles.netValue, { color: net >= 0 ? colors.success : colors.danger }]}>
-          {loading ? '---' : `${net >= 0 ? '+' : ''}${formatEUR(net)}`}
+          {loading ? '---' : `${net >= 0 ? '+' : ''}${formatAmount(net)}`}
         </Text>
       </View>
     </Card>

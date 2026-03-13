@@ -10,10 +10,11 @@ import { getBillById, updateBill, deleteBill } from '../../src/db/bills';
 import { createBillPayment, getPaymentsForBill, deleteBillPayment } from '../../src/db/bill-payments';
 import { useDatabase } from '../../src/hooks/useDatabase';
 import { BillWithCategory, BillPayment, CreateBillInput } from '../../src/db/types';
-import { formatEUR } from '../../src/utils/currency';
+import { useCurrency } from '../../src/hooks/useCurrency';
 import { formatDate, getTodayISO } from '../../src/utils/dates';
 
 export default function EditBillScreen() {
+  const { formatAmount } = useCurrency();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { triggerRefresh, refreshKey } = useDatabase();
@@ -99,7 +100,7 @@ export default function EditBillScreen() {
                   <View>
                     <Text style={styles.paymentDate}>{formatDate(payment.paid_date)}</Text>
                   </View>
-                  <Text style={styles.paymentAmount}>{formatEUR(payment.amount)}</Text>
+                  <Text style={styles.paymentAmount}>{formatAmount(payment.amount)}</Text>
                 </View>
               </View>
             ))}

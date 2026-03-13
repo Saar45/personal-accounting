@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { DatabaseProvider, useDatabase } from '../src/hooks/useDatabase';
+import { CurrencyProvider } from '../src/hooks/useCurrency';
 import { useBiometricLock } from '../src/hooks/useBiometricLock';
 import { BiometricLock } from '../src/components/BiometricLock';
 import { colors } from '../src/constants/theme';
@@ -93,7 +94,9 @@ function RootLayoutContent() {
 export default function RootLayout() {
   return (
     <DatabaseProvider>
-      <RootLayoutContent />
+      <CurrencyProvider>
+        <RootLayoutContent />
+      </CurrencyProvider>
     </DatabaseProvider>
   );
 }
