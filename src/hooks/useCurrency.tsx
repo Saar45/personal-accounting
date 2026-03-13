@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import * as SecureStore from 'expo-secure-store';
 import { createFormatters, SUPPORTED_CURRENCIES, SupportedCurrency } from '../utils/currency';
 
-export const CURRENCY_CURRENCY_STORE_KEY = 'base_currency';
+export const CURRENCY_STORE_KEY = 'base_currency';
 const DEFAULT_CURRENCY = 'EUR';
 
 interface CurrencyContextType {
@@ -37,9 +37,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     load();
   }, []);
 
-  const setCurrency = useCallback((code: string) => {
+  const setCurrency = useCallback(async (code: string) => {
     setCurrencyState(code);
-    SecureStore.setItemAsync(CURRENCY_STORE_KEY, code).catch(() => {});
+    await SecureStore.setItemAsync(CURRENCY_STORE_KEY, code).catch(() => {});
   }, []);
 
   const formatters = useMemo(() => createFormatters(currency), [currency]);

@@ -13,6 +13,7 @@ import { pickAndParseCSV, mapRowsToTransactions, ParsedCSVRow } from '../../src/
 import { exportTransactionsCSV } from '../../src/utils/csv-export';
 import { bulkCreateTransactions } from '../../src/db/transactions';
 import { getAllCategories } from '../../src/db/categories';
+import { rescheduleNotificationsIfEnabled } from '../../src/utils/notifications';
 
 function SettingRow({ icon, iconColor, label, description, onPress }: {
   icon: string;
@@ -331,9 +332,10 @@ export default function SettingsScreen() {
                   styles.currencyRow,
                   item.code === currency && styles.currencyRowSelected,
                 ]}
-                onPress={() => {
-                  setCurrency(item.code);
+                onPress={async () => {
+                  await setCurrency(item.code);
                   setCurrencyPickerVisible(false);
+                  rescheduleNotificationsIfEnabled().catch(() => {});
                 }}
                 activeOpacity={0.6}
               >

@@ -36,8 +36,6 @@ export function createFormatters(currencyCode: string): CurrencyFormatters {
   const formatter = new Intl.NumberFormat(currency.locale, {
     style: 'currency',
     currency: currency.code,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
   });
 
   const compactFormatter = new Intl.NumberFormat(currency.locale, {
