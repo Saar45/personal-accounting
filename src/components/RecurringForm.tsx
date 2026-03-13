@@ -6,6 +6,7 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { CategoryPicker } from './CategoryPicker';
 import { DatePickerField } from './ui/DatePickerField';
+import { CurrencyPickerField } from './ui/CurrencyPickerField';
 import { Category, CreateRecurringTransactionInput } from '../db/types';
 import { getTodayISO } from '../utils/dates';
 import { useCurrency } from '../hooks/useCurrency';
@@ -25,6 +26,7 @@ interface RecurringFormProps {
     description: string;
     frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
     next_occurrence: string;
+    currency?: string;
   };
   onSubmit: (input: CreateRecurringTransactionInput) => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -41,6 +43,7 @@ export function RecurringForm({ initialValues, onSubmit, onDelete, submitLabel }
   );
   const [nextOccurrence, setNextOccurrence] = useState(initialValues?.next_occurrence ?? getTodayISO());
   const [categoryId, setCategoryId] = useState<number | null>(initialValues?.category_id ?? null);
+  const [recCurrency, setRecCurrency] = useState(initialValues?.currency ?? currency);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -69,6 +72,7 @@ export function RecurringForm({ initialValues, onSubmit, onDelete, submitLabel }
       description: description || undefined,
       frequency,
       next_occurrence: nextOccurrence,
+      currency: recCurrency,
     });
     setLoading(false);
   };
@@ -107,12 +111,18 @@ export function RecurringForm({ initialValues, onSubmit, onDelete, submitLabel }
       </View>
 
       <Input
-        label={`Amount (${currency})`}
+        label={`Amount (${recCurrency})`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
         placeholder="0.00"
         error={errors.amount}
+      />
+
+      <CurrencyPickerField
+        label="Currency"
+        value={recCurrency}
+        onChange={setRecCurrency}
       />
 
       <Input
