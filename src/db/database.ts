@@ -3,13 +3,22 @@ import { DEFAULT_CATEGORIES } from '../constants/categories';
 import { runMigrations } from './migrations';
 
 let db: SQLite.SQLiteDatabase | null = null;
+let dbInitPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) return db;
+  // Prevent concurrent initialization — all callers wait on the same promise
+  if (dbInitPromise) return dbInitPromise;
 
-  db = await SQLite.openDatabaseAsync('personal_accounting.db');
+  dbInitPromise = initDatabase();
+  db = await dbInitPromise;
+  return db;
+}
 
-  await db.execAsync(`
+async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
+  const database = await SQLite.openDatabaseAsync('personal_accounting.db');
+
+  await database.execAsync(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
@@ -47,10 +56,10 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
     );
   `);
 
-  await seedDefaultCategories(db);
-  await runMigrations(db);
+  await seedDefaultCategories(database);
+  await runMigrations(database);
 
-  return db;
+  return database;
 }
 
 async function seedDefaultCategories(database: SQLite.SQLiteDatabase): Promise<void> {
