@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { BillWithCategory } from '../db/types';
-import { formatEUR } from '../utils/currency';
+import { useCurrency } from '../hooks/useCurrency';
+import { useExchangeRates } from '../hooks/useExchangeRates';
 import { getRelativeDueDate, getDueDateColor } from '../utils/dates';
 import { Badge, StatusBadge } from './ui/Badge';
 
@@ -14,6 +15,8 @@ interface BillItemProps {
 }
 
 export function BillItem({ bill, onPress, onMarkPaid }: BillItemProps) {
+  const { formatAmount } = useCurrency();
+  const { convertAmount } = useExchangeRates();
   const dueDateText = getRelativeDueDate(bill.next_due_date);
   const dueDateColor = getDueDateColor(bill.next_due_date);
 
@@ -38,7 +41,7 @@ export function BillItem({ bill, onPress, onMarkPaid }: BillItemProps) {
         </View>
       </View>
       <View style={styles.rightSection}>
-        <Text style={styles.amount}>{formatEUR(bill.amount)}</Text>
+        <Text style={styles.amount}>{formatAmount(convertAmount(bill.amount, bill.currency))}</Text>
         {onMarkPaid && bill.is_active ? (
           <TouchableOpacity style={styles.markPaidButton} onPress={onMarkPaid} activeOpacity={0.7}>
             <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />

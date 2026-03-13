@@ -5,9 +5,11 @@ import { colors, spacing, borderRadius } from '../constants/theme';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { DatePickerField } from './ui/DatePickerField';
+import { CurrencyPickerField } from './ui/CurrencyPickerField';
 import { CategoryPicker } from './CategoryPicker';
 import { Category, CreateTransactionInput } from '../db/types';
 import { getTodayISO } from '../utils/dates';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface TransactionFormProps {
   initialValues?: {
@@ -16,6 +18,7 @@ interface TransactionFormProps {
     category_id: number | null;
     description: string;
     date: string;
+    currency?: string;
   };
   onSubmit: (input: CreateTransactionInput) => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -23,11 +26,13 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel }: TransactionFormProps) {
+  const { currency } = useCurrency();
   const [type, setType] = useState<'expense' | 'income'>(initialValues?.type ?? 'expense');
   const [amount, setAmount] = useState(initialValues?.amount ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
   const [date, setDate] = useState(initialValues?.date ?? getTodayISO());
   const [categoryId, setCategoryId] = useState<number | null>(initialValues?.category_id ?? null);
+  const [txnCurrency, setTxnCurrency] = useState(initialValues?.currency ?? currency);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -55,6 +60,7 @@ export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel
       category_id: categoryId!,
       description: description || undefined,
       date,
+      currency: txnCurrency,
     });
     setLoading(false);
   };
@@ -93,12 +99,18 @@ export function TransactionForm({ initialValues, onSubmit, onDelete, submitLabel
       </View>
 
       <Input
-        label="Amount (EUR)"
+        label={`Amount (${txnCurrency})`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
         placeholder="0.00"
         error={errors.amount}
+      />
+
+      <CurrencyPickerField
+        label="Currency"
+        value={txnCurrency}
+        onChange={setTxnCurrency}
       />
 
       <Input

@@ -4,11 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../constants/theme';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { formatEUR } from '../../utils/currency';
+import { useCurrency } from '../../hooks/useCurrency';
+import { useExchangeRates } from '../../hooks/useExchangeRates';
 import { getRelativeDueDate, getDueDateColor } from '../../utils/dates';
 import { useUpcomingBills } from '../../hooks/useBills';
 
 export function UpcomingBills() {
+  const { formatAmount } = useCurrency();
+  const { convertAmount } = useExchangeRates();
   const { bills, loading } = useUpcomingBills(3);
 
   return (
@@ -33,7 +36,7 @@ export function UpcomingBills() {
                     {getRelativeDueDate(bill.next_due_date)}
                   </Text>
                 </View>
-                <Text style={styles.billAmount}>{formatEUR(bill.amount)}</Text>
+                <Text style={styles.billAmount}>{formatAmount(convertAmount(bill.amount, bill.currency))}</Text>
               </View>
             </View>
           );

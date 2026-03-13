@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
+import { CurrencyPickerField } from './ui/CurrencyPickerField';
 import { CategoryPicker } from './CategoryPicker';
 import { Category, CreateBillInput } from '../db/types';
 import { computeNextDueDate } from '../utils/dates';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface BillFormProps {
   initialValues?: {
@@ -14,6 +16,7 @@ interface BillFormProps {
     category_id: number | null;
     frequency: 'weekly' | 'monthly' | 'yearly';
     due_day: string;
+    currency?: string;
   };
   onSubmit: (input: CreateBillInput) => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -21,6 +24,7 @@ interface BillFormProps {
 }
 
 export function BillForm({ initialValues, onSubmit, onDelete, submitLabel }: BillFormProps) {
+  const { currency } = useCurrency();
   const [name, setName] = useState(initialValues?.name ?? '');
   const [amount, setAmount] = useState(initialValues?.amount ?? '');
   const [frequency, setFrequency] = useState<'weekly' | 'monthly' | 'yearly'>(
@@ -28,6 +32,7 @@ export function BillForm({ initialValues, onSubmit, onDelete, submitLabel }: Bil
   );
   const [dueDay, setDueDay] = useState(initialValues?.due_day ?? '');
   const [categoryId, setCategoryId] = useState<number | null>(initialValues?.category_id ?? null);
+  const [billCurrency, setBillCurrency] = useState(initialValues?.currency ?? currency);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -68,6 +73,7 @@ export function BillForm({ initialValues, onSubmit, onDelete, submitLabel }: Bil
       frequency,
       due_day: dueDayNum,
       next_due_date: computeNextDueDate(frequency, dueDayNum),
+      currency: billCurrency,
     });
     setLoading(false);
   };
@@ -89,12 +95,18 @@ export function BillForm({ initialValues, onSubmit, onDelete, submitLabel }: Bil
       />
 
       <Input
-        label="Amount (EUR)"
+        label={`Amount (${billCurrency})`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
         placeholder="0.00"
         error={errors.amount}
+      />
+
+      <CurrencyPickerField
+        label="Currency"
+        value={billCurrency}
+        onChange={setBillCurrency}
       />
 
       <Text style={styles.label}>FREQUENCY</Text>

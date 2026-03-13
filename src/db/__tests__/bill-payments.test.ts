@@ -34,7 +34,7 @@ describe('createBillPayment', () => {
     expect(id).toBe(1);
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO bill_payments'),
-      1, 50, '2026-03-13'
+      1, 50, '2026-03-13', 'EUR'
     );
   });
 });

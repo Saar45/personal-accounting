@@ -4,10 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../../constants/theme';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { formatEUR } from '../../utils/currency';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useSpendingByCategory } from '../../hooks/useTransactions';
 
 export function SpendingBreakdown() {
+  const { formatAmount } = useCurrency();
   const { spending, loading } = useSpendingByCategory();
 
   if (spending.length === 0 && !loading) {
@@ -32,7 +33,7 @@ export function SpendingBreakdown() {
             <View style={styles.row}>
               <Badge icon={item.category_icon} color={item.category_color} size="sm" />
               <Text style={styles.categoryName}>{item.category_name}</Text>
-              <Text style={styles.amount}>{formatEUR(item.total)}</Text>
+              <Text style={styles.amount}>{formatAmount(item.total)}</Text>
             </View>
             <View style={styles.barTrack}>
               <View

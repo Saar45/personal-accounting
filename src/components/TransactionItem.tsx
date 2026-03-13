@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../constants/theme';
 import { TransactionWithCategory } from '../db/types';
-import { formatEUR } from '../utils/currency';
+import { useCurrency } from '../hooks/useCurrency';
+import { useExchangeRates } from '../hooks/useExchangeRates';
 import { formatDate } from '../utils/dates';
 import { Badge } from './ui/Badge';
 
@@ -13,6 +14,8 @@ interface TransactionItemProps {
 }
 
 export function TransactionItem({ transaction, onPress }: TransactionItemProps) {
+  const { formatAmount } = useCurrency();
+  const { convertAmount } = useExchangeRates();
   const isIncome = transaction.type === 'income';
 
   return (
@@ -27,7 +30,7 @@ export function TransactionItem({ transaction, onPress }: TransactionItemProps) 
         </Text>
       </View>
       <Text style={[styles.amount, isIncome ? styles.amountIncome : styles.amountExpense]}>
-        {isIncome ? '+' : '-'}{formatEUR(transaction.amount)}
+        {isIncome ? '+' : '-'}{formatAmount(convertAmount(transaction.amount, transaction.currency))}
       </Text>
     </TouchableOpacity>
   );

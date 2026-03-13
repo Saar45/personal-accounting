@@ -7,7 +7,8 @@ import { useRecurringTransactions } from '../../src/hooks/useRecurring';
 import { RecurringTransactionWithCategory } from '../../src/db/types';
 import { Badge, StatusBadge } from '../../src/components/ui/Badge';
 import { EmptyState } from '../../src/components/EmptyState';
-import { formatEUR } from '../../src/utils/currency';
+import { useCurrency } from '../../src/hooks/useCurrency';
+import { useExchangeRates } from '../../src/hooks/useExchangeRates';
 import { formatDate } from '../../src/utils/dates';
 
 function FrequencyTag({ frequency }: { frequency: string }) {
@@ -25,6 +26,8 @@ function RecurringItem({
   item: RecurringTransactionWithCategory;
   onPress: () => void;
 }) {
+  const { formatAmount } = useCurrency();
+  const { convertAmount } = useExchangeRates();
   const isExpense = item.type === 'expense';
 
   return (
@@ -36,7 +39,7 @@ function RecurringItem({
             {item.description || item.category_name}
           </Text>
           <Text style={[styles.itemAmount, { color: isExpense ? colors.danger : colors.success }]}>
-            {isExpense ? '-' : '+'}{formatEUR(item.amount)}
+            {isExpense ? '-' : '+'}{formatAmount(convertAmount(item.amount, item.currency))}
           </Text>
         </View>
         <View style={styles.itemBottomRow}>

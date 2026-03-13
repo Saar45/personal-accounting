@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadows } from '../../src/constants/theme';
 import { Badge } from '../../src/components/ui/Badge';
 import { EmptyState } from '../../src/components/EmptyState';
-import { formatEUR } from '../../src/utils/currency';
+import { useCurrency } from '../../src/hooks/useCurrency';
 import { useBudgetProgress } from '../../src/hooks/useBudgets';
 import { BudgetWithProgress } from '../../src/db/types';
 
@@ -16,6 +16,7 @@ function getProgressColor(ratio: number): string {
 }
 
 function BudgetRow({ budget }: { budget: BudgetWithProgress }) {
+  const { formatAmount } = useCurrency();
   const ratio = budget.amount > 0 ? budget.spent / budget.amount : 0;
   const progressWidth = Math.min(ratio, 1) * 100;
   const progressColor = getProgressColor(ratio);
@@ -31,10 +32,10 @@ function BudgetRow({ budget }: { budget: BudgetWithProgress }) {
         </View>
         <View style={styles.amountsRow}>
           <Text style={[styles.spentText, overBudget && { color: colors.danger }]}>
-            {formatEUR(budget.spent)}
+            {formatAmount(budget.spent)}
           </Text>
           <Text style={styles.ofText}> of </Text>
-          <Text style={styles.budgetAmountText}>{formatEUR(budget.amount)}</Text>
+          <Text style={styles.budgetAmountText}>{formatAmount(budget.amount)}</Text>
         </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progressWidth}%`, backgroundColor: progressColor }]} />

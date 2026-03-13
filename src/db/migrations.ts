@@ -92,6 +92,38 @@ const migrations: Migration[] = [
       `);
     },
   },
+  {
+    version: 7,
+    up: async (db) => {
+      // Multi-currency: add currency column to all entity tables
+      // Each ALTER TABLE must run separately — batching fails in expo-sqlite
+      // try/catch for idempotency in case of partial prior run (duplicate column is safe to ignore)
+      const tables = ['transactions', 'bills', 'recurring_transactions', 'budgets', 'bill_payments'];
+      for (const table of tables) {
+        try {
+          await db.runAsync(`ALTER TABLE ${table} ADD COLUMN currency TEXT NOT NULL DEFAULT 'EUR'`);
+        } catch (e: any) {
+          if (!e?.message?.includes('duplicate column')) throw e;
+        }
+      }
+
+      // Exchange rate cache table
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS exchange_rates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          base_currency TEXT NOT NULL,
+          target_currency TEXT NOT NULL,
+          rate REAL NOT NULL,
+          date TEXT NOT NULL,
+          fetched_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(base_currency, target_currency, date)
+        );
+      `);
+      await db.execAsync(
+        'CREATE INDEX IF NOT EXISTS idx_exchange_rates_base_date ON exchange_rates(base_currency, date)'
+      );
+    },
+  },
 ];
 
 export async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {

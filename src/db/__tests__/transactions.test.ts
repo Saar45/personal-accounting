@@ -41,7 +41,7 @@ describe('createTransaction', () => {
     expect(id).toBe(1);
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO transactions'),
-      50, 'expense', 1, 'Test', '2026-03-13'
+      50, 'expense', 1, 'Test', '2026-03-13', 'EUR'
     );
   });
 
@@ -55,7 +55,7 @@ describe('createTransaction', () => {
 
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.any(String),
-      100, 'income', 2, null, '2026-03-13'
+      100, 'income', 2, null, '2026-03-13', 'EUR'
     );
   });
 });
@@ -81,24 +81,30 @@ describe('getTransactionsByMonth', () => {
 });
 
 describe('getMonthlyTotals', () => {
-  it('returns zeros when no data', async () => {
-    mockDb.getFirstAsync.mockResolvedValue(null);
+  it('returns empty array when no data', async () => {
+    mockDb.getAllAsync.mockResolvedValue([]);
     const result = await getMonthlyTotals(2026, 3);
-    expect(result).toEqual({ income: 0, expenses: 0 });
+    expect(result).toEqual([]);
   });
 
-  it('returns aggregated values', async () => {
-    mockDb.getFirstAsync.mockResolvedValue({ income: 3000, expenses: 500 });
+  it('returns rows grouped by type and currency', async () => {
+    mockDb.getAllAsync.mockResolvedValue([
+      { type: 'income', currency: 'EUR', total: 3000 },
+      { type: 'expense', currency: 'EUR', total: 500 },
+    ]);
     const result = await getMonthlyTotals(2026, 3);
-    expect(result).toEqual({ income: 3000, expenses: 500 });
+    expect(result).toEqual([
+      { type: 'income', currency: 'EUR', total: 3000 },
+      { type: 'expense', currency: 'EUR', total: 500 },
+    ]);
   });
 });
 
 describe('getTotalBalance', () => {
-  it('returns zeros when no data', async () => {
-    mockDb.getFirstAsync.mockResolvedValue(null);
+  it('returns empty array when no data', async () => {
+    mockDb.getAllAsync.mockResolvedValue([]);
     const result = await getTotalBalance();
-    expect(result).toEqual({ income: 0, expenses: 0 });
+    expect(result).toEqual([]);
   });
 });
 

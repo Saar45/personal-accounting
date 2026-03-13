@@ -2,9 +2,11 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import * as SecureStore from 'expo-secure-store';
 import { parseISO, subDays, isBefore, startOfDay } from 'date-fns';
-import { formatEUR } from './currency';
+import { createFormatters } from './currency';
+import { CURRENCY_STORE_KEY } from '../hooks/useCurrency';
 import { getActiveBills } from '../db/bills';
 import { BillWithCategory } from '../db/types';
+import { loadCachedRates, convert } from './exchangeRates';
 
 export const NOTIFICATIONS_KEY = 'notifications_enabled';
 
@@ -27,6 +29,11 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 export async function scheduleAllNotifications(bills: BillWithCategory[]): Promise<void> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
+  const savedCurrency = await SecureStore.getItemAsync(CURRENCY_STORE_KEY);
+  const displayCurrency = savedCurrency || 'EUR';
+  const { format: formatAmount } = createFormatters(displayCurrency);
+  const rateMap = await loadCachedRates(displayCurrency);
+
   const now = new Date();
   const today = startOfDay(now);
 
@@ -46,7 +53,7 @@ export async function scheduleAllNotifications(bills: BillWithCategory[]): Promi
           identifier: `bill-${bill.id}-eve`,
           content: {
             title: bill.name,
-            body: `Due tomorrow — ${formatEUR(bill.amount)}`,
+            body: `Due tomorrow — ${formatAmount(convert(bill.amount, bill.currency, displayCurrency, rateMap))}`,
             sound: true,
           },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: eveTrigger },
@@ -63,7 +70,7 @@ export async function scheduleAllNotifications(bills: BillWithCategory[]): Promi
           identifier: `bill-${bill.id}-due`,
           content: {
             title: bill.name,
-            body: `Due today — ${formatEUR(bill.amount)}`,
+            body: `Due today — ${formatAmount(convert(bill.amount, bill.currency, displayCurrency, rateMap))}`,
             sound: true,
           },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: dueTrigger },

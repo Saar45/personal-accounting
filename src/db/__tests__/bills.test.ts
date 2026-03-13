@@ -41,7 +41,7 @@ describe('createBill', () => {
     expect(id).toBe(1);
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO bills'),
-      'Rent', 800, 1, 'monthly', 1, '2026-04-01'
+      'Rent', 800, 1, 'monthly', 1, '2026-04-01', 'EUR'
     );
   });
 });
@@ -67,16 +67,16 @@ describe('deleteBill', () => {
 });
 
 describe('getMonthlyBillsTotal', () => {
-  it('returns 0 when no bills', async () => {
-    mockDb.getFirstAsync.mockResolvedValue({ total: null });
-    const total = await getMonthlyBillsTotal();
-    expect(total).toBe(0);
+  it('returns empty array when no bills', async () => {
+    mockDb.getAllAsync.mockResolvedValue([]);
+    const result = await getMonthlyBillsTotal();
+    expect(result).toEqual([]);
   });
 
-  it('returns total from query', async () => {
-    mockDb.getFirstAsync.mockResolvedValue({ total: 250.5 });
-    const total = await getMonthlyBillsTotal();
-    expect(total).toBe(250.5);
+  it('returns rows grouped by currency', async () => {
+    mockDb.getAllAsync.mockResolvedValue([{ currency: 'EUR', total: 250.5 }]);
+    const result = await getMonthlyBillsTotal();
+    expect(result).toEqual([{ currency: 'EUR', total: 250.5 }]);
   });
 });
 

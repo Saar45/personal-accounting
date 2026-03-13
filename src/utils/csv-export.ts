@@ -12,6 +12,7 @@ export async function exportTransactionsCSV(): Promise<void> {
     Amount: t.type === 'expense' ? -t.amount : t.amount,
     Type: t.type,
     Category: t.category_name,
+    Currency: t.currency,
   }));
 
   const csv = Papa.unparse(rows);

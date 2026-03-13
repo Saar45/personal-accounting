@@ -42,7 +42,7 @@ describe('createRecurring', () => {
     expect(id).toBe(1);
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO recurring_transactions'),
-      100, 'expense', 1, 'Monthly sub', 'monthly', '2026-04-01'
+      100, 'expense', 1, 'Monthly sub', 'monthly', '2026-04-01', 'EUR'
     );
   });
 });
@@ -77,6 +77,7 @@ describe('processRecurringTransactions', () => {
       category_id: 1,
       description: 'Netflix',
       date: '2026-03-13',
+      currency: undefined,
     });
   });
 

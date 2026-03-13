@@ -44,12 +44,13 @@ export async function getTransactionById(id: number): Promise<TransactionWithCat
 export async function createTransaction(input: CreateTransactionInput): Promise<number> {
   const db = await getDatabase();
   const result = await db.runAsync(
-    'INSERT INTO transactions (amount, type, category_id, description, date) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO transactions (amount, type, category_id, description, date, currency) VALUES (?, ?, ?, ?, ?, ?)',
     input.amount,
     input.type,
     input.category_id,
     input.description ?? null,
-    input.date
+    input.date,
+    input.currency ?? 'EUR'
   );
   return result.lastInsertRowId;
 }
@@ -57,12 +58,13 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
 export async function updateTransaction(id: number, input: CreateTransactionInput): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE transactions SET amount = ?, type = ?, category_id = ?, description = ?, date = ? WHERE id = ?',
+    'UPDATE transactions SET amount = ?, type = ?, category_id = ?, description = ?, date = ?, currency = ? WHERE id = ?',
     input.amount,
     input.type,
     input.category_id,
     input.description ?? null,
     input.date,
+    input.currency ?? 'EUR',
     id
   );
 }
@@ -72,20 +74,21 @@ export async function deleteTransaction(id: number): Promise<void> {
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
 }
 
-// BF5: Single query for monthly totals
-export async function getMonthlyTotals(year: number, month: number): Promise<{ income: number; expenses: number }> {
+// BF5: Monthly totals grouped by currency for conversion
+export async function getMonthlyTotals(year: number, month: number): Promise<Array<{
+  type: 'income' | 'expense';
+  currency: string;
+  total: number;
+}>> {
   const db = await getDatabase();
   const { start, end } = monthRange(year, month);
 
-  const result = await db.getFirstAsync<{ income: number; expenses: number }>(`
-    SELECT
-      COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) as income,
-      COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) as expenses
+  return db.getAllAsync(`
+    SELECT type, currency, SUM(amount) as total
     FROM transactions
     WHERE date >= ? AND date < ?
+    GROUP BY type, currency
   `, start, end);
-
-  return { income: result?.income ?? 0, expenses: result?.expenses ?? 0 };
 }
 
 export async function getSpendingByCategory(year: number, month: number): Promise<Array<{
@@ -93,33 +96,35 @@ export async function getSpendingByCategory(year: number, month: number): Promis
   category_name: string;
   category_icon: string;
   category_color: string;
+  currency: string;
   total: number;
 }>> {
   const db = await getDatabase();
   const { start, end } = monthRange(year, month);
 
   return db.getAllAsync(`
-    SELECT t.category_id, c.name as category_name, c.icon as category_icon, c.color as category_color, SUM(t.amount) as total
+    SELECT t.category_id, c.name as category_name, c.icon as category_icon, c.color as category_color, t.currency, SUM(t.amount) as total
     FROM transactions t
     JOIN categories c ON t.category_id = c.id
     WHERE t.type = 'expense' AND t.date >= ? AND t.date < ?
-    GROUP BY t.category_id
+    GROUP BY t.category_id, t.currency
     ORDER BY total DESC
   `, start, end);
 }
 
-// BF5: Single query for total balance
-export async function getTotalBalance(): Promise<{ income: number; expenses: number }> {
+// BF5: Total balance grouped by currency for conversion
+export async function getTotalBalance(): Promise<Array<{
+  type: 'income' | 'expense';
+  currency: string;
+  total: number;
+}>> {
   const db = await getDatabase();
 
-  const result = await db.getFirstAsync<{ income: number; expenses: number }>(`
-    SELECT
-      COALESCE(SUM(CASE WHEN type='income' THEN amount ELSE 0 END), 0) as income,
-      COALESCE(SUM(CASE WHEN type='expense' THEN amount ELSE 0 END), 0) as expenses
+  return db.getAllAsync(`
+    SELECT type, currency, SUM(amount) as total
     FROM transactions
+    GROUP BY type, currency
   `);
-
-  return { income: result?.income ?? 0, expenses: result?.expenses ?? 0 };
 }
 
 export async function bulkCreateTransactions(inputs: CreateTransactionInput[]): Promise<void> {
@@ -127,12 +132,13 @@ export async function bulkCreateTransactions(inputs: CreateTransactionInput[]): 
   await db.withExclusiveTransactionAsync(async (txn) => {
     for (const input of inputs) {
       await txn.runAsync(
-        'INSERT INTO transactions (amount, type, category_id, description, date) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO transactions (amount, type, category_id, description, date, currency) VALUES (?, ?, ?, ?, ?, ?)',
         input.amount,
         input.type,
         input.category_id,
         input.description ?? null,
-        input.date
+        input.date,
+        input.currency ?? 'EUR'
       );
     }
   });

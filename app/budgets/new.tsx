@@ -10,15 +10,19 @@ import { Badge } from '../../src/components/ui/Badge';
 import { createBudget } from '../../src/db/budgets';
 import { getCategoriesByType } from '../../src/db/categories';
 import { useDatabase } from '../../src/hooks/useDatabase';
+import { useCurrency } from '../../src/hooks/useCurrency';
+import { CurrencyPickerField } from '../../src/components/ui/CurrencyPickerField';
 import { Category, CreateBudgetInput } from '../../src/db/types';
 
 export default function NewBudgetScreen() {
   const router = useRouter();
   const { triggerRefresh } = useDatabase();
+  const { currency: displayCurrency } = useCurrency();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
   const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [currency, setCurrencyState] = useState(displayCurrency);
   const [loading, setLoading] = useState(false);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [errors, setErrors] = useState<{ category?: string; amount?: string }>({});
@@ -47,6 +51,7 @@ export default function NewBudgetScreen() {
         category_id: selectedCategoryId!,
         amount: parseFloat(amount),
         period,
+        currency,
       });
       triggerRefresh();
       router.back();
@@ -91,6 +96,12 @@ export default function NewBudgetScreen() {
             })}
           </View>
         </View>
+
+        <CurrencyPickerField
+          label="Currency"
+          value={currency}
+          onChange={setCurrencyState}
+        />
 
         <Input
           label="Budget Amount"

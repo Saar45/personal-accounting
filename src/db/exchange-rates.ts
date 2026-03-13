@@ -1,0 +1,60 @@
+import { getDatabase } from './database';
+import { ExchangeRate } from './types';
+
+export async function getLatestRates(baseCurrency: string): Promise<ExchangeRate[]> {
+  const db = await getDatabase();
+  return db.getAllAsync<ExchangeRate>(
+    `SELECT * FROM exchange_rates
+     WHERE base_currency = ? AND date = (
+       SELECT MAX(date) FROM exchange_rates WHERE base_currency = ?
+     )`,
+    baseCurrency,
+    baseCurrency
+  );
+}
+
+export async function saveRates(
+  baseCurrency: string,
+  date: string,
+  rates: Record<string, number>
+): Promise<void> {
+  const db = await getDatabase();
+  await db.withTransactionAsync(async () => {
+    for (const [target, rate] of Object.entries(rates)) {
+      await db.runAsync(
+        `INSERT OR REPLACE INTO exchange_rates (base_currency, target_currency, rate, date)
+         VALUES (?, ?, ?, ?)`,
+        baseCurrency,
+        target,
+        rate,
+        date
+      );
+    }
+  });
+}
+
+export async function getRateAge(baseCurrency: string): Promise<number | null> {
+  const fetchedAt = await getLastFetchedAt(baseCurrency);
+  if (!fetchedAt) return null;
+  return (Date.now() - fetchedAt.getTime()) / (1000 * 60 * 60); // hours
+}
+
+export async function getLatestRateDate(baseCurrency: string): Promise<string | null> {
+  const db = await getDatabase();
+  const result = await db.getFirstAsync<{ date: string }>(
+    'SELECT MAX(date) as date FROM exchange_rates WHERE base_currency = ?',
+    baseCurrency
+  );
+  return result?.date ?? null;
+}
+
+export async function getLastFetchedAt(baseCurrency: string): Promise<Date | null> {
+  const db = await getDatabase();
+  const result = await db.getFirstAsync<{ fetched_at: string }>(
+    'SELECT fetched_at FROM exchange_rates WHERE base_currency = ? ORDER BY fetched_at DESC LIMIT 1',
+    baseCurrency
+  );
+  if (!result) return null;
+  const raw = result.fetched_at;
+  return new Date(raw.endsWith('Z') ? raw : raw + 'Z');
+}
