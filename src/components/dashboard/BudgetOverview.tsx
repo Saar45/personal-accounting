@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { colors, spacing, borderRadius } from '../../constants/theme';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { formatEUR } from '../../utils/currency';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useBudgetProgress } from '../../hooks/useBudgets';
 
 function getProgressColor(ratio: number): string {
@@ -15,6 +15,7 @@ function getProgressColor(ratio: number): string {
 }
 
 export function BudgetOverview() {
+  const { formatAmount } = useCurrency();
   const { budgets, loading } = useBudgetProgress();
   const router = useRouter();
   const topBudgets = budgets.slice(0, 3);
@@ -41,7 +42,7 @@ export function BudgetOverview() {
                   <View style={styles.budgetTextRow}>
                     <Text style={styles.budgetName} numberOfLines={1}>{budget.category_name}</Text>
                     <Text style={styles.budgetAmounts}>
-                      {formatEUR(budget.spent)} / {formatEUR(budget.amount)}
+                      {formatAmount(budget.spent)} / {formatAmount(budget.amount)}
                     </Text>
                   </View>
                   <View style={styles.progressTrack}>

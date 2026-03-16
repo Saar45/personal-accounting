@@ -6,6 +6,7 @@ import { Button } from './ui/Button';
 import { CategoryPicker } from './CategoryPicker';
 import { Category, CreateBillInput } from '../db/types';
 import { computeNextDueDate } from '../utils/dates';
+import { useCurrency } from '../hooks/useCurrency';
 
 interface BillFormProps {
   initialValues?: {
@@ -21,6 +22,7 @@ interface BillFormProps {
 }
 
 export function BillForm({ initialValues, onSubmit, onDelete, submitLabel }: BillFormProps) {
+  const { currency } = useCurrency();
   const [name, setName] = useState(initialValues?.name ?? '');
   const [amount, setAmount] = useState(initialValues?.amount ?? '');
   const [frequency, setFrequency] = useState<'weekly' | 'monthly' | 'yearly'>(
@@ -89,7 +91,7 @@ export function BillForm({ initialValues, onSubmit, onDelete, submitLabel }: Bil
       />
 
       <Input
-        label="Amount (EUR)"
+        label={`Amount (${currency})`}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"

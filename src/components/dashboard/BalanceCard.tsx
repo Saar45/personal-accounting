@@ -3,10 +3,11 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '../../constants/theme';
-import { formatEUR } from '../../utils/currency';
+import { useCurrency } from '../../hooks/useCurrency';
 import { useTotalBalance, useMonthlyTotals } from '../../hooks/useTransactions';
 
 export function BalanceCard() {
+  const { formatAmount } = useCurrency();
   const { balance, loading: balanceLoading } = useTotalBalance();
   const { income, expenses, loading: monthlyLoading } = useMonthlyTotals();
 
@@ -19,7 +20,7 @@ export function BalanceCard() {
     >
       <Text style={styles.label}>Total Balance</Text>
       <Text style={styles.balance}>
-        {balanceLoading ? '---' : formatEUR(balance)}
+        {balanceLoading ? '---' : formatAmount(balance)}
       </Text>
       <View style={styles.row}>
         <View style={styles.stat}>
@@ -28,7 +29,7 @@ export function BalanceCard() {
           </View>
           <Text style={styles.statLabel}>Income</Text>
           <Text style={[styles.statValue, { color: colors.success }]}>
-            {monthlyLoading ? '---' : formatEUR(income)}
+            {monthlyLoading ? '---' : formatAmount(income)}
           </Text>
         </View>
         <View style={styles.divider} />
@@ -38,7 +39,7 @@ export function BalanceCard() {
           </View>
           <Text style={styles.statLabel}>Expenses</Text>
           <Text style={[styles.statValue, { color: colors.danger }]}>
-            {monthlyLoading ? '---' : formatEUR(expenses)}
+            {monthlyLoading ? '---' : formatAmount(expenses)}
           </Text>
         </View>
       </View>
