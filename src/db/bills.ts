@@ -49,13 +49,14 @@ export async function getBillById(id: number): Promise<BillWithCategory | null> 
 export async function createBill(input: CreateBillInput): Promise<number> {
   const db = await getDatabase();
   const result = await db.runAsync(
-    'INSERT INTO bills (name, amount, category_id, frequency, due_day, next_due_date) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO bills (name, amount, category_id, frequency, due_day, next_due_date, currency) VALUES (?, ?, ?, ?, ?, ?, ?)',
     input.name,
     input.amount,
     input.category_id,
     input.frequency,
     input.due_day,
-    input.next_due_date
+    input.next_due_date,
+    input.currency ?? 'EUR'
   );
   return result.lastInsertRowId;
 }
@@ -63,13 +64,14 @@ export async function createBill(input: CreateBillInput): Promise<number> {
 export async function updateBill(id: number, input: CreateBillInput): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
-    'UPDATE bills SET name = ?, amount = ?, category_id = ?, frequency = ?, due_day = ?, next_due_date = ? WHERE id = ?',
+    'UPDATE bills SET name = ?, amount = ?, category_id = ?, frequency = ?, due_day = ?, next_due_date = ?, currency = ? WHERE id = ?',
     input.name,
     input.amount,
     input.category_id,
     input.frequency,
     input.due_day,
     input.next_due_date,
+    input.currency ?? 'EUR',
     id
   );
 }
@@ -87,10 +89,10 @@ export async function deleteBill(id: number): Promise<void> {
   await db.runAsync('DELETE FROM bills WHERE id = ?', id);
 }
 
-export async function getMonthlyBillsTotal(): Promise<number> {
+export async function getMonthlyBillsTotal(): Promise<Array<{ currency: string; total: number }>> {
   const db = await getDatabase();
-  const result = await db.getFirstAsync<{ total: number | null }>(`
-    SELECT SUM(
+  return db.getAllAsync(`
+    SELECT currency, SUM(
       CASE frequency
         WHEN 'weekly' THEN amount * 365.25 / 7.0 / 12.0
         WHEN 'monthly' THEN amount
@@ -99,8 +101,8 @@ export async function getMonthlyBillsTotal(): Promise<number> {
     ) as total
     FROM bills
     WHERE is_active = 1
+    GROUP BY currency
   `);
-  return result?.total ?? 0;
 }
 
 export async function refreshBillDueDates(): Promise<void> {

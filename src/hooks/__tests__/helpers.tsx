@@ -13,6 +13,16 @@ jest.mock('../useDatabase', () => ({
   DatabaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+jest.mock('../useExchangeRates', () => ({
+  useExchangeRates: jest.fn(() => ({
+    convertAmount: (amount: number, _fromCurrency: string) => amount,
+    ratesLoaded: true,
+    rateDate: null,
+    refreshRates: jest.fn(),
+    lastRefresh: null,
+  })),
+}));
+
 export function setDatabaseReady(ready: boolean) {
   mockDatabaseContext.isReady = ready;
 }

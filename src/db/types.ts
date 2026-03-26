@@ -21,6 +21,7 @@ export interface Transaction {
   category_id: number;
   description: string | null;
   date: string;
+  currency: string;
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ export interface Bill {
   due_day: number;
   is_active: number;
   next_due_date: string;
+  currency: string;
   created_at: string;
 }
 
@@ -54,6 +56,7 @@ export interface CreateTransactionInput {
   category_id: number;
   description?: string;
   date: string;
+  currency?: string;
 }
 
 export interface CreateBillInput {
@@ -63,6 +66,7 @@ export interface CreateBillInput {
   frequency: 'weekly' | 'monthly' | 'yearly';
   due_day: number;
   next_due_date: string;
+  currency?: string;
 }
 
 export interface Budget {
@@ -70,6 +74,7 @@ export interface Budget {
   category_id: number;
   amount: number;
   period: 'monthly' | 'yearly';
+  currency: string;
   created_at: string;
 }
 
@@ -80,10 +85,15 @@ export interface BudgetWithProgress extends Budget {
   spent: number;
 }
 
+export interface BudgetProgressRow extends BudgetWithProgress {
+  spentByCurrency: Array<{ currency: string; total: number }>;
+}
+
 export interface CreateBudgetInput {
   category_id: number;
   amount: number;
   period: 'monthly' | 'yearly';
+  currency?: string;
 }
 
 export interface RecurringTransaction {
@@ -95,6 +105,7 @@ export interface RecurringTransaction {
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   next_occurrence: string;
   is_active: number;
+  currency: string;
   created_at: string;
 }
 
@@ -111,6 +122,7 @@ export interface CreateRecurringTransactionInput {
   description?: string;
   frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
   next_occurrence: string;
+  currency?: string;
 }
 
 export interface BillPayment {
@@ -118,6 +130,7 @@ export interface BillPayment {
   bill_id: number;
   amount: number;
   paid_date: string;
+  currency: string;
   created_at: string;
 }
 
@@ -125,4 +138,14 @@ export interface CreateBillPaymentInput {
   bill_id: number;
   amount: number;
   paid_date: string;
+  currency?: string;
+}
+
+export interface ExchangeRate {
+  id: number;
+  base_currency: string;
+  target_currency: string;
+  rate: number;
+  date: string;
+  fetched_at: string;
 }

@@ -7,7 +7,7 @@ const DEFAULT_CURRENCY = 'EUR';
 
 interface CurrencyContextType {
   currency: string;
-  setCurrency: (code: string) => void;
+  setCurrency: (code: string) => Promise<void>;
   formatAmount: (amount: number) => string;
   formatCompact: (amount: number) => string;
   formatSigned: (amount: number, type: 'income' | 'expense') => string;
@@ -17,7 +17,7 @@ interface CurrencyContextType {
 const defaultFormatters = createFormatters(DEFAULT_CURRENCY);
 const CurrencyContext = createContext<CurrencyContextType>({
   currency: DEFAULT_CURRENCY,
-  setCurrency: () => {},
+  setCurrency: async () => {},
   formatAmount: defaultFormatters.format,
   formatCompact: defaultFormatters.formatCompact,
   formatSigned: defaultFormatters.formatSigned,

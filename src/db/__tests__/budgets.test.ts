@@ -19,7 +19,7 @@ describe('createBudget', () => {
 
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO budgets'),
-      1, 500, 'monthly'
+      1, 500, 'monthly', 'EUR'
     );
   });
 });

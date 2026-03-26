@@ -53,6 +53,7 @@ export default function EditTransactionScreen() {
           category_id: transaction.category_id,
           description: transaction.description ?? '',
           date: transaction.date,
+          currency: transaction.currency,
         }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}

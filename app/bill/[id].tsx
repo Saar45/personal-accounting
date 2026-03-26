@@ -11,10 +11,12 @@ import { createBillPayment, getPaymentsForBill, deleteBillPayment } from '../../
 import { useDatabase } from '../../src/hooks/useDatabase';
 import { BillWithCategory, BillPayment, CreateBillInput } from '../../src/db/types';
 import { useCurrency } from '../../src/hooks/useCurrency';
+import { useExchangeRates } from '../../src/hooks/useExchangeRates';
 import { formatDate, getTodayISO } from '../../src/utils/dates';
 
 export default function EditBillScreen() {
   const { formatAmount } = useCurrency();
+  const { convertAmount } = useExchangeRates();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { triggerRefresh, refreshKey } = useDatabase();
@@ -56,7 +58,7 @@ export default function EditBillScreen() {
   };
 
   const handleMarkPaid = async () => {
-    await createBillPayment({ bill_id: Number(id), amount: bill.amount, paid_date: getTodayISO() });
+    await createBillPayment({ bill_id: Number(id), amount: bill.amount, paid_date: getTodayISO(), currency: bill.currency });
     triggerRefresh();
   };
 
@@ -83,6 +85,7 @@ export default function EditBillScreen() {
           category_id: bill.category_id,
           frequency: bill.frequency,
           due_day: bill.due_day.toString(),
+          currency: bill.currency,
         }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
@@ -100,7 +103,7 @@ export default function EditBillScreen() {
                   <View>
                     <Text style={styles.paymentDate}>{formatDate(payment.paid_date)}</Text>
                   </View>
-                  <Text style={styles.paymentAmount}>{formatAmount(payment.amount)}</Text>
+                  <Text style={styles.paymentAmount}>{formatAmount(convertAmount(payment.amount, payment.currency))}</Text>
                 </View>
               </View>
             ))}

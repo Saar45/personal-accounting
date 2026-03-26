@@ -54,6 +54,7 @@ export default function EditRecurringScreen() {
           description: recurring.description ?? '',
           frequency: recurring.frequency,
           next_occurrence: recurring.next_occurrence,
+          currency: recurring.currency,
         }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}

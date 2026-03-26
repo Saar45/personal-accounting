@@ -3,8 +3,8 @@ import { renderHook, waitFor, act } from '@testing-library/react-native';
 
 jest.mock('../../db/transactions', () => ({
   getAllTransactions: jest.fn().mockResolvedValue([]),
-  getMonthlyTotals: jest.fn().mockResolvedValue({ income: 0, expenses: 0 }),
-  getTotalBalance: jest.fn().mockResolvedValue({ income: 0, expenses: 0 }),
+  getMonthlyTotals: jest.fn().mockResolvedValue([]),
+  getTotalBalance: jest.fn().mockResolvedValue([]),
   getSpendingByCategory: jest.fn().mockResolvedValue([]),
   searchTransactions: jest.fn().mockResolvedValue([]),
 }));
@@ -52,7 +52,10 @@ describe('useTransactions', () => {
 
 describe('useMonthlyTotals', () => {
   it('returns monthly totals', async () => {
-    mockGetTotals.mockResolvedValue({ income: 3000, expenses: 500 });
+    mockGetTotals.mockResolvedValue([
+      { type: 'income', currency: 'EUR', total: 3000 },
+      { type: 'expense', currency: 'EUR', total: 500 },
+    ]);
 
     const { result } = renderHook(() => useMonthlyTotals());
 
@@ -67,7 +70,10 @@ describe('useMonthlyTotals', () => {
 
 describe('useTotalBalance', () => {
   it('computes balance from income and expenses', async () => {
-    mockGetBalance.mockResolvedValue({ income: 5000, expenses: 2000 });
+    mockGetBalance.mockResolvedValue([
+      { type: 'income', currency: 'EUR', total: 5000 },
+      { type: 'expense', currency: 'EUR', total: 2000 },
+    ]);
 
     const { result } = renderHook(() => useTotalBalance());
 
