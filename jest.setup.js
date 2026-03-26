@@ -42,3 +42,38 @@ jest.mock('expo-notifications', () => ({
 jest.mock('expo-device', () => ({
   isDevice: true,
 }), { virtual: true });
+
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = require('react-native');
+  return {
+    Ionicons: ({ name, ...props }) => <Text {...props}>{name}</Text>,
+  };
+});
+
+jest.mock('expo-linear-gradient', () => {
+  const { View } = require('react-native');
+  return {
+    LinearGradient: ({ children, ...props }) => <View {...props}>{children}</View>,
+  };
+});
+
+jest.mock('expo-blur', () => {
+  const { View } = require('react-native');
+  return {
+    BlurView: ({ children, ...props }) => <View {...props}>{children}</View>,
+  };
+});
+
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(() => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() })),
+  useLocalSearchParams: jest.fn(() => ({})),
+  Link: ({ children }) => children,
+}));
+
+jest.mock('@react-native-community/datetimepicker', () => {
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: (props) => <View testID="date-picker" />,
+  };
+});
